@@ -1,10 +1,12 @@
-;; Structure & Interpretation of Computer Programs
+;; Structure & Interpretation of Computer Programs, Chapter 1
+;; ELEMENTS OF PROGRAMMING
 
-;; CHAPTER 1 - ELEMENTS OF PROGRAMMING
-;; ===================================
+;;
+;; 1.1 ELEMENTS OF PROGRAMMING
+;; ===========================
 
-;; Expressions
-;; -----------
+;; 1.1.1 Expressions
+;; ----------------- 
 ;;
 ;; expressions are normally prefix for the interpreter. Prefix notation has
 ;; several advantages, including that it can take arbitrary number of
@@ -18,14 +20,14 @@
 (define (nested x y)
   (+ (* x y) (- x y)))
 
-;; Naming and the Environment
-;; --------------------------
+;; 1.1.2 Naming And The Environment
+;; -------------------------------- 
 ;;
 ;; We can name things using the `define` keyword. In the below example, we can
 ;; now refer to `2` with the name `size`
 
-;; Evaluating Combinations
-;; -----------------------
+;; 1.1.3 Evaluating Combinations
+;; -----------------------------
 
 ;; The general procedure the compiler uses is:
 ;;   1. Evaluate the subexpressions of the combination
@@ -57,8 +59,8 @@
 (define (f a)
   (sum-of-squares (+ a 1) (* a 2)))
 
-;; The Substitution Model
-;; ----------------------
+;; 1.1.5 The Substitution Model
+;; ----------------------------
 
 ;; However, two points are stressed:
 ;;   * The purpose of the substitution model is to understand procedure
@@ -94,8 +96,10 @@
 ;; (+ 36 100)
 ;; 136
 ;;
-;; Conditional Expressions and Predicates
-;; --------------------------------------
+
+;; 1.1.6 Conditional Expressions And Predicates
+;; --------------------------------------------
+
 ;; We have the conditional and the if statement
 ;;
 ;; The cond syntax is shown in this function. Note that the result is
@@ -168,8 +172,8 @@
 ;; recursion. If the interpreter is using normal-order evaluation, then there
 ;; will be infinite recursion only if (= x 0)
 
-;; Example: Square Roots by Newton's Method
-;; ----------------------------------------
+;; 1.1.7 Example: Square Roots By Newton's Method
+;; ----------------------------------------------
 
 ;; There is an important distinction between mathematical and computer
 ;; functions because the latter must not only be valid by also effective.
@@ -192,23 +196,24 @@
 
 ;; Thus, we can formalize the process in terms of procedures
 
-(define (sqrt-iter guess x)
-  (if (good-enough? guess x)
+ (define (sqrt-iter guess x)
+  (if (improved-good-enough? guess x)
       guess
-      (sqrt-iter (improve guess x) x)))
+      (begin
+        (print "guess = " guess)
+        (sqrt-iter (improve guess x) x))))
 
 (define (improve guess x)
-  (print guess)
   (average guess (/ x guess)))
 
 (define (average x y)
   (/ (+ x y) 2))
 
 (define (good-enough? guess x)
-  (< (abs (- (square guess) x)) 0.001))
+  (< (abs (- (square guess) x)  ) 0.001))
 
-(define (sqrt x)
-  (sqrt-iter 16 x))
+(define (sqrt-1 x)
+  (sqrt-iter 1 x))
 
 ;; note that MIT Scheme defaults to use rational numbers as result when doing
 ;; integer division. Chicken Scheme allows for rational number by adding the
@@ -235,14 +240,178 @@
 ;; because it can never be terminated.
 
 ;; Exercise 1.7 The `good-enough?` test used in computing square roots will
-;; note be very effective for finding the square roots of very small
-;; numbers. Also, in real computers, arithmetic operations are almost always
-;; performed with limited precision. this makes our test inadequate for very
-;; large numbers. Explain these statements, with examples showing how the test
-;; fails for small and large numbers. Al alternative strategy for implementing
-;; `good-enough?` is to watch how guess changes from one iteration ot the
+;; not be very effective for finding the square roots of very small numbers
+;; Also, in real computers, arithmetic operations are almost always performed
+;; with limited precision. this makes our test inadequate for very large
+;; numbers. Explain these statements, with examples showing how the test fails
+;; ffor small and large numbers. An alternative strategy for implementing
+;; `good-enough?` is to watch how guess changes from one iteration to the
 ;; next and to stop when the change is a very small fraction of the guess.
 ;; Design a square-root procedure that uses this kind of end test. Does this
 ;; work better for small and large numbers?
 
+;; The problem with very small numbers is that the actual answer might be
+;; smaller than the tolerance level we're using (in this case, 0.001). For
+;; very large floating point numbers, it is possible that the difference
+;; might actually be larger than 0.001, leading to infinite recursion.
+;;
+;; The way to solve it is to take the guess and divide it by x
 
+(define (improved-good-enough? guess x)
+  (< (/
+      (abs (- (square guess) x))
+      x)
+     0.001))
+
+;; Exercise 1.8 Newton's method for cube roots is based on the fact that if
+;; `y` is an approximation to the cube root of x, then a better approximation
+;; is given by the value
+;;
+;;        x / y^2 + 2y
+;;        ------------
+;;             3
+;;
+;; Use this formula to implement a cube-root procedure analogous to the
+;; square-root procedure. In Section 1.3.4 we will see how to implement
+;; Newton's method in general as an abstraction of these square-root and
+;; cube-root procedures.
+
+(define (cube-root x)
+  (cube-root-iter 1 x))
+
+(define (cube-root-iter guess x)
+  (if (improved-cube-good-enough? guess x)
+      guess
+      (begin
+        (print "guess = " guess)
+        (cube-root-iter (improve-cube-guess guess x) x))))
+
+(define (improved-cube-good-enough? guess x)
+  (< (/
+      (abs (- (cube guess) x))
+      x)
+     0.001))
+
+(define (cube x)
+  (* x x x))
+
+(define (improve-cube-guess y x)
+  (/
+   (+
+    (/ x (square y))
+    (* 2 y))
+   3))
+
+;; 1.1.8 Procedures As Black-Box Abstractions
+;; ------------------------------------------
+;; To solve a problem, one must break a problem up into smaller problems,
+;; the unit of breaking this down is the *procedural abstraction*, which
+;; represents the abstraction of a given procedure. The point of a procedural
+;; abstraction is to suppress detail.
+;;
+;; When a black-box is implemented, it should not matter what values local to
+;; the procedure where chosen by the implementor. Thus, the improve procedure
+;; for the cube-root procedure could have used `x y` or `a b`. Thus, the
+;; meaning of a procedure should be independent of the parameter names used by
+;; the author. This leads to the conclusion that the parameter names must be
+;; local to the body of the procedure.
+;;
+;; Procedure parameters are called *bound variables* because the procedure
+;; definition _binds_ the parameter value to a locally used variable. In
+;; contrast, variables such as the procedure `square` are unbound (in other
+;; words, they are varibles defined outside the procedure). The *scope* of a
+;; variable is the set of procedures for which that particular binding applies.
+
+;; Another way to control scope is to have internal definitions and block
+;; structure, thus, a cleaner version of the sqrt procedure could be:
+
+(define (sqrt-2 x)
+  (define (average x y) (/ (+ x y) 2))
+  (define (square x) (* x x))
+  (define (good-enough? guess x)
+    (< (/ (abs (- (square guess) x)) x) 0.001))
+  (define (improve guess x) (average guess (/ x guess)))
+  (define (iter guess x)
+    (if (good-enough? guess x)
+        guess
+        (iter (improve guess x) x)))
+  (iter 1.0 x))
+
+;; This version improves upon the privious one by reducing the amount of
+;; variables the namespace uses, and thus sqrt-2 procedure is a true black box.
+;; However, it can be improved even more because the variable `x` does not
+;; need to be constantly bound, but instead can be a free variable, as is
+;; shown below:
+
+(define (sqrt-3 x)
+  (define (average a b) (/ (+ a b) 2))
+  (define (square a) (* a a))
+  (define (good-enough? guess)
+    (< (/ (abs (- (square guess) x)) x) 0.001))
+  (define (improve guess)
+    (average guess (/ x guess)))
+  (define (iter guess)
+    (if (good-enough? guess)
+        guess
+        (iter (improve guess))))
+  (iter 1.0))
+
+;; Thus, the cube-root procedure would be as follows:
+
+(define (cube-root-2 x)
+  (define (cube a) (* a a a))
+  (define (good-enough? guess)
+    (< (/ (abs (- (cube guess) x)) x) 0.001))
+  (define (improve guess)
+    (/ (+ (/ x (square guess)) (* 2 guess)) 3))
+  (define (iter guess)
+    (if (good-enough? guess)
+        guess
+        (iter (improve guess))))
+  (iter 1.0))
+
+;; 1.2 PROCEDURES AND THE PROCESSES THEY GENERATE
+;; ==============================================
+;;
+;; The ability to visualize the consequences of the actions under
+;; consideration is crucial to becoming an expert programmer. A procedure
+;; is a pattern for the _local evolution_ of a computational process. In
+;; this section, we look at some of those patterns.
+;;
+;; 1.2.1 Linear Recursion and Iteration
+;; ------------------------------------
+;;
+;; Consider the procedure to calcuate a factorial
+
+(define (fact-1 n)
+  (if (= n 1) 1
+      (* n (fact (- n 1)))))
+
+;; An alternative method using iteration might look like
+
+(define (fact-2 n)
+  (define (iter acc i)
+    (if (> i n)
+        acc
+        (iter (* acc i) (+ i 1))))
+  (iter 1 1))
+
+;; Although these two versions arrive at the same answer, the shapes of the
+;; processes they use are very different. In the recursive version, the
+;; process builds up a chain of deferred operations. In contrast, the iterative
+;; version does not grow or shrink because there are no deferred operations.
+;; Instead, there are a fixed number of _state variables_ together with a rule
+;; about how they should be updated as the process moves from state to state.
+;;
+;; Note that recursive process is distinquished from a recursive procedure that
+;; calls itself. Instead, the recursive process is defined from the shape that
+;; the process takes (growing number of deferred operations followed by a
+;; shrinking as the deferred operations are collapsed together).
+;;
+;; Note that with *tail recursion* the iterative process is executed in
+;; constant space, so there is no overhead to pay with recursion from the
+;; compiler.
+
+;; Exercise 1.9 Each of the following two procedures defines a method for
+;; adding two positive integers in terms of the procedures `inc`, which
+;; increments its argument by 1, and `dec`, which decrements its arguments
