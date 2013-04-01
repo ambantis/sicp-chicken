@@ -580,15 +580,15 @@
 ;; 292
 
 ;; It is interesting to note that this function uses a tree-recursive
-;; algorithm, which is not very inefficient. However, it is not obvious that
-;; there is a better alternative using an iterative process. Thus, the
-;; trade-off is that tree-recursive process is easy to understand but not
-;; efficient.
+;; algorithm, which is not very inefficient. However, it is not
+;; obvious that there is a better alternative using an iterative
+;; process. Thus, the trade-off is that tree-recursive process is easy
+;; to understand but not efficient.
 
-;; Exercise 1.11 A function `f` is defined by the rule that f(n) = n if
-;; n < 3 and f(n) = f(n-1) + 2f(n-2) + 3f(n-3) if n>= 3. Write a procedure
-;; that computes f by means of a recursive process. Write a procedure that
-;; computes f by means of an iterative process.
+;; Exercise 1.11 A function `f` is defined by the rule that f(n) = n
+;; if n < 3 and f(n) = f(n-1) + 2f(n-2) + 3f(n-3) if n>= 3. Write a
+;; procedure that computes f by means of a recursive process. Write a
+;; procedure that computes f by means of an iterative process.
 
 (define (f-recursive n)
   (cond ((< n 3) n)
@@ -611,7 +611,8 @@
         ((= n 2) 2)
         (else (iter 3 4 2 1 0))))
 
-;; exercise 1.12 The following pattern of numbers is called Pascal's triangle
+;; exercise 1.12 The following pattern of numbers is called Pascal's
+;; triangle
 ;;
 ;;             1
 ;;            1 1
@@ -619,9 +620,11 @@
 ;;          1 3 3 1
 ;;         1 4 6 4 1
 ;;            ...
-;; The numbers at the edge of the triange are all 1, and each number inside
-;; the triangle is the sum of the two numbers above it. Write a procedure that
-;; computes elements of Pascal's triangle by means of a recursive process.
+;;
+;; The numbers at the edge of the triange are all 1, and each number
+;; inside the triangle is the sum of the two numbers above it. Write a
+;; procedure that computes elements of Pascal's triangle by means of a
+;; recursive process.
 ;;
 
 (define (pascal row col)
@@ -631,34 +634,134 @@
                (pascal (- row 1) (- col 1))
                (pascal (- row 1) col)))))
 
-;; Exercise 1.13 Prove that Fib(n) is the closest integer to sigma^n/sqrt(5),
-;; where sigma = (1 + sqrt(5))/2. Hint: Let y = (1 - sqrt(5))/2. Use induction
-;; and the definition of the Fibonacci numbers to prove that Fib(n) =
-;; (theta^n = epsilon^n)/sqrt(5)
+;; Exercise 1.13 Prove that Fib(n) is the closest integer to
+;; sigma^n/sqrt(5), where sigma = (1 + sqrt(5))/2. Hint: Let y = (1 -
+;; sqrt(5))/2. Use induction and the definition of the Fibonacci
+;; numbers to prove that Fib(n) = (theta^n = epsilon^n)/sqrt(5)
 
 ;; ???
 
 ;; 1.2.3 Orders of Growth
 ;; ----------------------
 ;;
-;; We want to express the amount of computational resources that a procedure
-;; will consume. The *order of growth* is a gross measure of the resources
-;; required by a process as the inputs become larger.
+;; We want to express the amount of computational resources that a
+;; procedure will consume. The *order of growth* is a gross measure of
+;; the resources required by a process as the inputs become larger.
 ;;
-;; Let `n` be a parameter that measures the size of the problem. Then R(n) is
-;; the amount of resources the process requires for problem size of `n`.
+;; Let `n` be a parameter that measures the size of the problem. Then
+;; R(n) is the amount of resources the process requires for problem
+;; size of `n`.
 ;;
-;; We say that R(n) has order of growth "theta of f(n)", if there are positive
-;; constants k_1 and k_2 independent of n such that
-;;           k_1 of f(n) <=  R(n) <= k_2 of f(n)
+;; We say that R(n) has order of growth θ(f(n))", if there are
+;; positive constants k_1 and k_2 independent of n such that k_1 of
+;; f(n) <= R(n) <= k_2 of f(n)
 ;;
-;; The `fact-recursive`, the number of steps grew proportional to the input n,
-;; thus the steps required grew at theta(n). For the `fact-iterative`, the
-;; number of steps was still theta(n) but the space was theta(1), that is,
-;; constant. The tree-recursive Fibonacci computation requires theta(phi^n)
-;; steps and space of theta(n), where phi is the golden-ratio described in
-;; section 1.2.2
+;; The `fact-recursive`, the number of steps grew proportional to the
+;; input `n`, thus the steps required grew at θ(n). For the
+;; `fact-iterative`, the number of steps was still θ(n) but the space
+;; was θ(1), that is, constant. The tree-recursive Fibonacci
+;; computation requires θ(φ^n) steps and space of θ(n), where φ is the
+;; golden-ratio described in section 1.2.2. The concept of space
+;; relates to how many values the procedure needs to remember.
+;;
+;; In general, the number of steps required by a tree-recursive
+;; process will be proportional to the number of nodes in the tree,
+;; while the space required will be proportional to the maximum depth
+;; of the tree.
 ;;
 ;; The value of the *golden ratio* is (1+sqrt(5))/2 == 1.6180339887...
+;; 
+;; Orders of growth only provides a crude description of a process
+;; behavior. Thus, a process requiring n^2 steps and a process requiring
+;; 1000n^2 steps and another process requiring 3n^2 + 10n + 17 steps all
+;; have θ(n^2) order of growth.
+;;
+;; However, it provides a useful indication of how we can expect the
+;; behavior of a process to change as the size increases. For θ(n),
+;; doubling the size of input will double the resources used.
 
+;; Exercise 1.15 The sine of an angle (specified in radians) can be
+;; computed by making use of the approximation sin =x if x is sufficently
+;; small, and the trigonemetric identity
+;;                                        x             x
+;;                         sin x = 3 sin --- - 4 sin^3 --- 
+;;                                        3             3
+;;
+;; to reduce the size of the argument of sin. (for purposes of this exercise
+;; an angle is considered "sufficiently small" if its magnitude is not greater
+;; than 0.1 radians.) these ideas are incorporated in the following procedures:
 
+(define (sine angle)
+  (define (cube x) (* x x x))
+  (define (p x)
+    (- (* 3 x) (* 4 (cube x))))
+  (if (not (> (abs angle) 0.1))
+      angle
+      (p (sine (/ angle 3.0)))))
+
+;; How many times is the procedure p applied when (sine 12.15) is evaluated?
+;; What is the order of growth in space and number of spets (as a function of
+;; a)
+
+;; 1.2.4 Exponentiation
+;; --------------------
+;;
+;; Suppose we want to define a process for exponentiation via a recursive
+;; definition
+
+(define (exp-linear-recursive x y)
+  (if (= y 0)
+      1
+      (* x (exp-linear-recursive x (- y 1)))))
+
+(define (exp-linear-iterative x y)
+  (define (iter i acc)
+    (if (= i 0)
+        acc
+        (iter (- i 1) (* acc x))))
+  (iter y 1))
+
+;; The recursive version requires θ(n) steps and θ(n) space. The iterative version
+;; requires θ(n) steps and θ(1) space.
+;;
+;; It is possible to reduce the steps by using successive squaring. Thus for b^8,
+;; instead of b * (b * (b * (b * (b * (b * (b * (b))))))), we can compute it using
+;; three multiplications: b^2 = b * b, b^4 = b^2 * b^2, b^8 = b^4 * b^4. We can use
+;; the following rule to address odd exponentials.
+;;
+;;                       b^n = (b^(n/2))^2, if n is even
+;;                       b^n = b * b^(n-1)  if n is odd
+;;
+(define (fast-exp x y)
+  (define (even? n)
+    (= (remainder n 2) 0))
+  (cond ((= y 0) 1)
+        ((even? y) (square (fast-exp x (/ y 2))))
+        (else (* x (fast-exp x (- y 1))))))
+
+;; The fast-exp version grows logarithmically with n in both space and number of
+;; steps, using the fast version means we can double the size of the exponent (with
+;; only one more multiplication) for each n. Thus, it is θ(log n).
+;;
+;; The difference with large numbers can be striking. For example, for an exponent
+;; of 1000, it can be handled in 14 multiplications instead of 1000.
+
+;; Exercise 1.16 Design a procedure that evolves an iterative exponentiation
+;; process that uses successive squaring and uses a logarithmic number of steps, as
+;; does fast-expt. (Hint: Using the observation that (b^(n/2))^2 = (b^2)^(n/2), keep,
+;; along with the exponent n and the base b, an additional state variable a, and
+;; define the state transformation in such a way that the product ab^n is unchanged
+;; from state to state. At the beginning of the process a is taken to be 1, and the
+;; answer is given by the value of a at the end of the process. In general, the
+;; technique of defining an _invariant quantity_ that remains unchanged from state
+;; to state is a powerful way to think about the design of iterative algorithms.
+
+(define (fast-exp2 base exp)
+  (define (even? x)
+    (= (remainder x 2) 0))
+  (define (square x) (* x x))
+  (define (iter a b n)
+    (cond ((= n 0) a)
+          ((even? n) (iter a (square b) (/ n 2)))
+          (else (iter (* a b) b (- n 1)))))
+  (iter 1 base exp))
