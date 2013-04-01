@@ -739,22 +739,26 @@
         ((even? y) (square (fast-exp x (/ y 2))))
         (else (* x (fast-exp x (- y 1))))))
 
-;; The fast-exp version grows logarithmically with n in both space and number of
-;; steps, using the fast version means we can double the size of the exponent (with
-;; only one more multiplication) for each n. Thus, it is θ(log n).
+;; The fast-exp version grows logarithmically with n in both space and
+;; number of steps, using the fast version means we can double the
+;; size of the exponent (with only one more multiplication) for each
+;; n. Thus, it is θ(log n).
 ;;
-;; The difference with large numbers can be striking. For example, for an exponent
-;; of 1000, it can be handled in 14 multiplications instead of 1000.
+;; The difference with large numbers can be striking. For example, for
+;; an exponent of 1000, it can be handled in 14 multiplications
+;; instead of 1000.
 
-;; Exercise 1.16 Design a procedure that evolves an iterative exponentiation
-;; process that uses successive squaring and uses a logarithmic number of steps, as
-;; does fast-expt. (Hint: Using the observation that (b^(n/2))^2 = (b^2)^(n/2), keep,
-;; along with the exponent n and the base b, an additional state variable a, and
-;; define the state transformation in such a way that the product ab^n is unchanged
-;; from state to state. At the beginning of the process a is taken to be 1, and the
-;; answer is given by the value of a at the end of the process. In general, the
-;; technique of defining an _invariant quantity_ that remains unchanged from state
-;; to state is a powerful way to think about the design of iterative algorithms.
+;; Exercise 1.16 Design a procedure that evolves an iterative
+;; exponentiation process that uses successive squaring and uses a
+;; logarithmic number of steps, as does fast-expt. (Hint: Using the
+;; observation that (b^(n/2))^2 = (b^2)^(n/2), keep, along with the
+;; exponent n and the base b, an additional state variable a, and
+;; define the state transformation in such a way that the product ab^n
+;; is unchanged from state to state. At the beginning of the process a
+;; is taken to be 1, and the answer is given by the value of a at the
+;; end of the process. In general, the technique of defining an
+;; _invariant quantity_ that remains unchanged from state to state is
+;; a powerful way to think about the design of iterative algorithms.
 
 (define (fast-exp2 base exp)
   (define (even? x)
@@ -765,3 +769,37 @@
           ((even? n) (iter a (square b) (/ n 2)))
           (else (iter (* a b) b (- n 1)))))
   (iter 1 base exp))
+
+;; Exercise 1.17 The exponentiation algorithms in this section are
+;; based on performing exponentiation by means of repeated
+;; multiplication. In a similar way, one can perform integer
+;; multiplication by means of repeated addition. The following
+;; multiplication procedure (in which it is assumed that our language
+;; can only add, not multiply) is analogous to the expt procedure
+
+(define (mult-1 a b)
+  (if (= b 0)
+      0
+      (+ a (mult-1 a (- b 1)))))
+
+;; This algorithm takes a number of steps that is linear in b. Now suppose
+;; we include, together with addition, operations double, which doubles an
+;; integer, and halve, which divides an (even) integer by 2. Using these,
+;; design a multiplication procedure analogous to fast-expt that uses a
+;; logarithmic number of steps.
+
+(define (mult-recursive a b)
+  (define (double n) (+ n n))
+  (define (halve n) (/ n 2))
+  (cond ((= 1 b) a)
+        ((even? b) (mult-recursive (double a) (halve b)))
+        (else (+ a (mult-recursive a (- b 1))))))
+
+(define (mult-iterative x y)
+  (define (double n) (+ n n))
+  (define (halve n) (/ n 2))
+  (define (iter acc a b)
+    (cond ((= b 0) acc)
+          ((even? b) (iter acc (double a) (halve b)))
+          (else (iter (+ acc a) a (- b 1)))))
+  (iter 0 x y))
