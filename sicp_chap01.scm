@@ -518,7 +518,7 @@
 ;; Fibnoacci sequence, in which each number is the sum of the previous two.
 ;; A programmatic definition of it might look like
 
-(define (fib-1 n)
+(define (fib1 n)
   (cond ((= n 0) 0)
         ((= n 1) 1)
         (else (+ (fib-1 (- n 1))
@@ -533,7 +533,7 @@
 ;;
 ;; An alterative would be this iterative process
 
-(define (fib-2 n)
+(define (fib2 n)
   (define (iter a b i)
     (if (= i 0) b
         (iter (+ a b) a (- i 1))))
@@ -795,6 +795,11 @@
         ((even? b) (mult-recursive (double a) (halve b)))
         (else (+ a (mult-recursive a (- b 1))))))
 
+;; Exercise 1.18 Using the results of Exercise 1.16 and 1.17, devise a
+;; procedure that generates an iterative process for multiplying two
+;; integers in terms of adding, doubling, and halving and uses a logarithmic
+;; number of steps
+
 (define (mult-iterative x y)
   (define (double n) (+ n n))
   (define (halve n) (/ n 2))
@@ -803,3 +808,61 @@
           ((even? b) (iter acc (double a) (halve b)))
           (else (iter (+ acc a) a (- b 1)))))
   (iter 0 x y))
+
+;; Exercise 1.19 There is a clever algorithm for computing the Fibonacci
+;; numbers in a logarithmic number of steps. Recall the transformation of
+;; the state variables a and b in the fib-iter process of Section 1.2.2:
+;; a <- a+b and b <- a. Call this transformation T, and observe that
+;; applying T over and over again `n` times, starting with 1 and 0, produces
+;; the pair Fib(n+1) and Fib(n). In other words, the Fibonacci numbers are
+;; produced by applying T^n, the nth power of the transformation T, starting
+;; with the pair (1,0). Now consider T to be the special case of p=0 and q=1
+;; in the family of transformations T_pq, where T_pq transforms the pair
+;; (a,b) according to a <- bq + aq + ap and b <- bp + aq. Show that if we
+;; apply such a transformation T_pq twice, the effect is the same as using
+;; a single transformation T_p'q' of the same form, and compute p' and q'
+;; in terms of p and q. This gives us an explicit way to square these
+;; transformations, and thus we can compute T^n using successive squaring,
+;; as in the fast-expt procedure. Put this all together to complete the
+;; following procedure, which runs in a logarithmic number of steps
+
+
+;; a1 <- bq + aq + ap
+;; b1 <- bp + aq
+;;
+;; a2 <- b1q + a1q + a1p
+;; b2 <- b1q + a1q
+
+;; a2 <- (bp + aq)q + (bq + aq + ap)q + (bq + aq + ap)p
+;;    =   bpq + aqq + bqq + aqq + apq + bpq + apq + app
+;;    =   bpq + bqq + bpq + aqq + aqq + apq + apq + app 
+;;    =   b(pq + qq + pq) + a(qq + qq + pq + pq + pp)
+;;    =   b(2pq + qq) + a(pq + pq + qq) + a(pp + qq)
+;;
+;; b2 <- (bp + aq)p + (bq + aq + ap)q
+;;    =   bpp + aqp + bqq + app + apq
+;;    =   b(pp + qq) + a(qp + qp + pp)
+;;
+;; therefore, p = (pp + qq)
+;;            q = (2pq + qq)
+
+(define (fib3 n)
+  (define (square x) (* x x))
+  (define (iter a b p q count)
+    (cond ((= count 0) b)
+          ((even? count) (iter
+                          a
+                          b
+                          (+ (square p) (square q))
+                          (+ (* 2 p q) (square q))
+                          (/ count 2)))
+          (else (iter
+                 (+ (* b q) (* a q) (* a p))
+                 (+ (* b p) (* a q))
+                 p
+                 q
+                 (- count 1)))))
+  (iter 1 0 0 1 n))
+
+
+
