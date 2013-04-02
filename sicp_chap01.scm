@@ -521,8 +521,8 @@
 (define (fib1 n)
   (cond ((= n 0) 0)
         ((= n 1) 1)
-        (else (+ (fib-1 (- n 1))
-                 (fib-1 (- n 2))))))
+        (else (+ (fib1 (- n 1))
+                 (fib1 (- n 2))))))
 
 ;; The evolved process of this procedure looks like a tree because for each
 ;; iteration, it calls itself twice. Note that the computation process is not
@@ -864,5 +864,121 @@
                  (- count 1)))))
   (iter 1 0 0 1 n))
 
+;; 1.2.5 Greatest Common Divisors
+;; ------------------------------
+;;
+;; GCD is defined as the largest integer that divides both `a` and `b` with
+;; no remainder. For example, the GCD of 16 and 28 is 4. One way to do this is
+;; to factor them and search for common factors, but there is a famous
+;; algorithm that is more famous.
+;;
+;; Given GCD(a,b) => GCD(b,r) where a % b = r. This is Euclid's Algorithm,
+;; which can be expressed as
+;;
+(define (gcd a b)
+  (if (= b 0)
+      a
+      (gcd b (remainder a b))))
 
+;; This iterative process has a number of steps that grows as a logarithm of
+;; the numbers involved. *Lame's Theorem* states that if Euclid's Algorithm
+;; requires `k` steps to compute some GCD pair, then the smaller number in
+;; the pair must be greater than or equal to the kth Fibonacci number, leading
+;; to an estimate of n >= Fib(k) approximately equal to φ^k/sqrt(5). Thus,
+;; the number of steps k grows as the logarithm (to the base φ) of n. Thus,
+;; the order of growth is θ(log n).
 
+;; Exercise 1.20 The process that a procedure generates is of course dependent
+;; on the rules used by the interpreter. As an example, consider the iterative
+;; gcd procedure given above. Suppose we were to interpret this procedure
+;; using normal-order evaluation, as discussed in Section 1.1.5 (The normal-
+;; order evaluation rule for `if` is described in Exercise 1.5). Using the
+;; substitution method (for normal order), illustrate the process generated
+;; in evaluating (gcd 206 40) and indicate the remainder operations that are
+;; actually performed. How many remainder operations are actually performed
+;; in the normal-order evaluation of (gcd 206 40)? In the applicative-order
+;; evaluation?
+
+;; (gcd 206 40)
+;; (= b 0) => #f
+;; (gcd 40 (remainder 206 40)
+;; (gcd 40 6)
+;; (= b 0) => #f
+;; (gcd 6 (remainder 40 6))
+;; (gcd 6 4)
+;; (= b 0) => #f
+;; (gcd 4 (remainder 6 4)
+;; (gcd 4 2)
+;; (= b 0) => #f
+;; (gcd 2 (remainder 2 4)
+;; (gcd 2 0)
+;; (= b 0) => #t
+;; 2
+;;
+;; There are 4 remainder operations performed; with applicative-order
+;; evaluation, it would be 5.
+
+;; 1.2.6 Example: Testing for Primality
+;; ------------------------------------
+;;
+;; This section deals with two methods of checking the primality of an integer.
+;; One has an order of growth of θ(sqrt(n)) and the probabilistic algorithm
+;; with an order of growth θ(log n).
+;;
+;; The following probram finds the smallest integral divosor (greater than 1)
+;; of a given number n.
+
+(define (smallest-divisor n)
+  (define (divides? a b) (= (remainder b a) 0))
+  (define (find-divisor n test-divisor)
+    (cond ((> (square test-divisor) n) n)
+          (else (find-divisor n (+ test-divisor 1)))))
+  (find-divisor n 2))
+
+(define (prime? n)
+  (= (smallest-divisor n)))
+
+;; Because it only tests divisors through sqrt(n), the order of growth is
+;; limited to θ(sqrt(n)).
+;;
+;; The θ(log n) primality test is based on a result from number theory
+;; known as Fermat's Little Theorem.
+;;
+;; Fermat's Little Theorem: If n is a prime number and `a` is any positive
+;; integer less than `n`, then `a` raised to the nth power is congruent to
+;; `a` modulo `n`.
+;;
+;; Two numbers are said to be _congruent modulo_ if they both have the same
+;; remainder when divided by `n`.
+;;
+;; If `n` is not prime, then, in general, most of the numbers `a < n` will
+;; not satisfy the above relation, which leads to the Fermat Test:
+;;
+;; Fermat Test: Given a number `n`, pick a random number a < n and compute
+;; the remainder of a^n % n. If the result is not equal to `a`, then `n` is
+;; certainly not prime. If it is `a`, then chances are good that `n` is
+;; prime. Repeat the test with other numbers. By trying more and more values
+;; we can increase our confidence in the result.
+;;
+;; To implement the Fermat test, we need a procedure that computes the
+;; exponential of a number modulo another number
+
+(define (expmod base exp m)
+  (cond ((= exp 0) 0)
+        ((even? exp)
+         (remainder (square (expmod base (/ exp 2) m)) m))
+        (else
+         (remainder (* base (expmod base (- exp 1) m)) m))))
+
+(define (fermat-test n)
+  (define (try-it a)
+    (= (expmod a n n) a))
+  (try-it (+ 1 (random (- n 1)))))
+
+(define (fast-prime? n times)
+  (cond ((= times 0) true)
+        ((fermat-test n) (fast-prime? n (- times 1)))
+        (else false)))
+
+;; There are numbers that can fool Fermat's test, but such numbers are very
+;; rare.
