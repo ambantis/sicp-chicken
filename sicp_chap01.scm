@@ -929,14 +929,16 @@
 ;; of a given number n.
 
 (define (smallest-divisor n)
+  (define (square x) (* x x))
   (define (divides? a b) (= (remainder b a) 0))
   (define (find-divisor n test-divisor)
     (cond ((> (square test-divisor) n) n)
+          ((divides? test-divisor n) test-divisor)
           (else (find-divisor n (+ test-divisor 1)))))
   (find-divisor n 2))
 
 (define (prime? n)
-  (= (smallest-divisor n)))
+  (= (smallest-divisor n) n))
 
 ;; Because it only tests divisors through sqrt(n), the order of growth is
 ;; limited to θ(sqrt(n)).
@@ -976,9 +978,82 @@
   (try-it (+ 1 (random (- n 1)))))
 
 (define (fast-prime? n times)
-  (cond ((= times 0) true)
+  (cond ((= times 0) #t)
         ((fermat-test n) (fast-prime? n (- times 1)))
-        (else false)))
+        (else #f)))
 
 ;; There are numbers that can fool Fermat's test, but such numbers are very
-;; rare.
+;; rare. Probabalistic algorithms are unique because the answer is only
+;; probably correct. There is a class of numbers that can fool the Fermat
+;; method, known as the _Carmichael numbers_. There are 255 such numbers below
+;; 100,000,000. The first Carmichael numbers are 561, 1105, 1729, 2465, 2821,
+;; and 6601. "In testing primality of very large numbers chosen at random, the
+;; chance of stumbling upon a value that fools the Fermat test is less than
+;; the chance that cosmic radiation will cause the computer to make an error
+;; in carrying out the 'correct' algorithm.
+
+;; Exercise 1.21 Use the `smallest-divisor` procedure to find the smallest
+;; divisor for each of the following numbers: 199, 1999, 1999.
+
+;; (smallest-divisor 199) => 199
+;; (smallest-divisor 1999) => 1999
+;; (smallest-divisor 19999 => 7
+
+;; Exercise 1.22 Most Lisp implementations include a primitive called `runtime`
+;; that returns an integer that specifies the amount of time the system has
+;; been running (measured, for example, in microseconds). The following
+;; `timed-prime-test` procedure, when called with an integer `n`, prints `n`
+;; and checks to see if `n` is prime. If `n` is prime, the procedure prints
+;; three asterisks followed by the amount of time used in performing the test.
+
+(define (timed-prime-test n)
+  (define (report-prime elapsed-time)
+    (display " *** ") (display elapsed-time))
+  (define (start-prime-test n start-time)
+    (if (prime? n)
+        (report-prime (- (current-milliseconds) start-time))))
+  (newline) (display n) (start-prime-test n (current-milliseconds)) (newline))
+
+;; Using this procedure, write a procedure `search-for-primes` that checks the
+;; primality of consecutive odd integers in a specified range. Use your
+;; procedure to find the three smallest primes larger than 1000; larger than
+;; 10,000; larger than 100,000; larger than 1,000,000. Note the time needed
+;; to test each prime. Since the testing algorithm has order of growth of
+;; θ(sqrt(n)), you should expect that testing for primes around 10,000 should
+;; take about sqrt(10) times as long as testing for primes around 1000. Do
+;; your timing data bear this out? How well do the data for 100,000 and
+;; 1,000,000 support the θ(sqrt(n)) prediction? Is your result compatible with
+;; the notion that programs on your machine run in time proportional to the
+;; number of steps required for the computation?
+
+(define (search-for-primes floor number)
+  (define (report-prime n elapsed-time)
+   (display n) (display " *** ") (display elapsed-time) (newline))
+  (define (iter i count start-time)
+    (cond ((= count number) (print "done"))
+          ((prime? i)
+           (begin
+             (report-prime i (- (current-milliseconds) start-time))
+             (iter (+ i 2) (+ count 1) (current-milliseconds))))
+          (else (iter (+ i 2) count (current-milliseconds)))))
+  (iter (+ floor 1) 0 (current-milliseconds)))
+
+;; #;27> (search-for-primes 100000000000 3)
+;;100000000003 *** 193.0
+;;100000000019 *** 185.0
+;;100000000057 *** 185.0
+;;done
+;;#;28>  (search-for-primes 10000000000000 3)
+;;10000000000037 *** 1862.0
+;;10000000000051 *** 1846.0
+;;10000000000099 *** 1857.0
+;;
+;; #;29> (search-for-primes 1000000000000 3)
+;;1000000000039 *** 589.0
+;;1000000000061 *** 587.0
+;;1000000000063 *** 585.0
+
+;; 589 / 193 = 3.0518
+;; 587 / 185 = 3.1729
+;; 585 / 185 = 3.1621
+
