@@ -364,6 +364,7 @@
 ;;                       b^n = b * b^(n-1)  if n is odd
 ;;
 (define (fast-exp x y)
+  (define (square n) (* n n))
   (define (even? n)
     (= (remainder n 2) 0))
   (cond ((= y 0) 1)
@@ -562,11 +563,17 @@
 (define (smallest-divisor n)
   (define (square x) (* x x))
   (define (divides? a b) (= (remainder b a) 0))
-  (define (find-divisor n test-divisor)
-    (cond ((> (square test-divisor) n) n)
-          ((divides? test-divisor n) test-divisor)
-          (else (find-divisor n (+ test-divisor 1)))))
-  (find-divisor n 2))
+  (define (find-divisor n test-divisor i)
+    (cond ((> (square test-divisor) n)
+           (begin
+             (print i " iterations to find divisor for " n)
+             n))
+          ((divides? test-divisor n)
+           (begin
+             (print i " iterations to find divisor for " n)
+             test-divisor))
+          (else (find-divisor n (+ test-divisor 1) (+ i 1)))))
+  (find-divisor n 2 1))
 
 (define (prime? n)
   (= (smallest-divisor n) n))
@@ -597,6 +604,7 @@
 ;; exponential of a number modulo another number
 
 (define (expmod base exp m)
+  (define (square n) (* n n))
   (cond ((= exp 0) 0)
         ((even? exp)
          (remainder (square (expmod base (/ exp 2) m)) m))
@@ -669,22 +677,145 @@
           (else (iter (+ i 2) count (current-milliseconds)))))
   (iter (+ floor 1) 0 (current-milliseconds)))
 
-;; #;27> (search-for-primes 100000000000 3)
+;;> (search-for-primes 100000000000 3)
 ;;100000000003 *** 193.0
 ;;100000000019 *** 185.0
 ;;100000000057 *** 185.0
 ;;done
-;;#;28>  (search-for-primes 10000000000000 3)
+;;
+;;> (search-for-primes 1000000000000 3)
+;;1000000000039 *** 589.0
+;;1000000000061 *** 587.0
+;;1000000000063 *** 585.0
+;;
+;;>  (search-for-primes 10000000000000 3)
 ;;10000000000037 *** 1862.0
 ;;10000000000051 *** 1846.0
 ;;10000000000099 *** 1857.0
 ;;
-;; #;29> (search-for-primes 1000000000000 3)
-;;1000000000039 *** 589.0
-;;1000000000061 *** 587.0
-;;1000000000063 *** 585.0
 
 ;; 589 / 193 = 3.0518
 ;; 587 / 185 = 3.1729
 ;; 585 / 185 = 3.1621
+;; sqrt(10) = 3.16227766016838
+
+;; Exercise 1.23 The `smallest-divisor` procedure shown at the start
+;; of this section does lots of needless testing: After it checks to
+;; see if the number is divisible by any larger even numbers. This
+;; suggests that the values used for `test-divisor` should not be
+;; 2,3,4,5,6,..., but rather 2,3,5,7,9,... To implement this change,
+;; define a procedure `next` that returns 3 if its input is equal to 2
+;; and otherwise returns its input plus 2. Modify the
+;; `smallest-divisor` procedure to use (next test-divisor) instead of
+;; (+ test-divisor 1). With `timed-prime-test` incorporating this
+;; modified version of `smallest-divisor`
+;;
+
+(define (next n)
+  (if (= n 2)
+      3
+      (+ n 2)))
+
+;;> (search-for-primes 100000000000 3)
+;;100000000003 *** 125.0
+;;100000000019 *** 117.0
+;;100000000057 *** 117.0
+
+;;> (search-for-primes 1000000000000 3)
+;;1000000000039 *** 367.0
+;;1000000000061 *** 369.0
+;;1000000000063 *** 369.0
+
+;;> (search-for-primes 10000000000000 3)
+;;10000000000037 *** 1181.0
+;;10000000000051 *** 1165.0
+;;10000000000099 *** 1166.0
+
+;;> (/ 185 117)
+;;1.58119658119658
+;;
+;;> (/ 585 369)
+;;1.58536585365854
+;;
+;;> (/ 1857 1166)
+;;1.5926243567753
+;;
+;;
+;; VERSION WITH NEXT
+;; =======================================
+;;6 iterations to find divisor for 100000000001
+;;158115 iterations to find divisor for 100000000003
+;;100000000003 *** 144.0
+;;2 iterations to find divisor for 100000000005
+;;177 iterations to find divisor for 100000000007
+;;4 iterations to find divisor for 100000000009
+;;2 iterations to find divisor for 100000000011
+;;2751 iterations to find divisor for 100000000013
+;;3 iterations to find divisor for 100000000015
+;;2 iterations to find divisor for 100000000017
+;;158115 iterations to find divisor for 100000000019
+;;100000000019 *** 132.0
+;;16767 iterations to find divisor for 100000000021
+;;2 iterations to find divisor for 100000000023
+;;3 iterations to find divisor for 100000000025
+;;15 iterations to find divisor for 100000000027
+;;2 iterations to find divisor for 100000000029
+;;9 iterations to find divisor for 100000000031
+;;1890 iterations to find divisor for 100000000033
+;;2 iterations to find divisor for 100000000035
+;;4 iterations to find divisor for 100000000037
+;;8094 iterations to find divisor for 100000000039
+;;2 iterations to find divisor for 100000000041
+;;10 iterations to find divisor for 100000000043
+;;3 iterations to find divisor for 100000000045
+;;2 iterations to find divisor for 100000000047
+;;66 iterations to find divisor for 100000000049
+;;4 iterations to find divisor for 100000000051
+;;2 iterations to find divisor for 100000000053
+;;3 iterations to find divisor for 100000000055
+;;158115 iterations to find divisor for 100000000057
+;;100000000057 *** 132.0
+;; total of 504,172 iterations (excluding prime numbers)
+;;
+;; VERSION ITERATING THROUGH EVERY NUMBER
+;; ======================================
+;;10 iterations to find divisor for 100000000001
+;; 316227 iterations to find divisor for 100000000003
+;; 100000000003 *** 220.0
+;; 2 iterations to find divisor for 100000000005
+;; 352 iterations to find divisor for 100000000007
+;; 6 iterations to find divisor for 100000000009
+;; 2 iterations to find divisor for 100000000011
+;; 5500 iterations to find divisor for 100000000013
+;; 4 iterations to find divisor for 100000000015
+;; 2 iterations to find divisor for 100000000017
+;; 316227 iterations to find divisor for 100000000019
+;; 100000000019 *** 214.0
+;; 33532 iterations to find divisor for 100000000021
+;; 2 iterations to find divisor for 100000000023
+;; 4 iterations to find divisor for 100000000025
+;; 28 iterations to find divisor for 100000000027
+;; 2 iterations to find divisor for 100000000029
+;; 16 iterations to find divisor for 100000000031
+;; 3778 iterations to find divisor for 100000000033
+;; 2 iterations to find divisor for 100000000035
+;; 6 iterations to find divisor for 100000000037
+;; 16186 iterations to find divisor for 100000000039
+;; 2 iterations to find divisor for 100000000041
+;; 18 iterations to find divisor for 100000000043
+;; 4 iterations to find divisor for 100000000045
+;; 2 iterations to find divisor for 100000000047
+;; 130 iterations to find divisor for 100000000049
+;; 6 iterations to find divisor for 100000000051
+;; 2 iterations to find divisor for 100000000053
+;; 4 iterations to find divisor for 100000000055
+;; 316227 iterations to find divisor for 100000000057
+;; 100000000057 *** 213.0
+;; (+ 316227 2 352 6 2 550 4 2 316227 33532 2 4 28 2 16 3778 2 6 16186 2 18 4 1380 6 2 4 316227)
+;; 1004571
+;; (/ 1004571 504172)
+;; 1.99251644280127
+;;
+;; The answer has to do with the fact that the procedure is more than just
+;; the iterations of smallest-divisor.
 
