@@ -873,4 +873,32 @@
 ;; (remainder 14 101)
 ;; 14
 
-;; thus, it limits the size of the computation because procedure is constantly applying the remainder function so that the number is must manage stays small.
+;; thus, it limits the size of the computation because procedure is
+;; constantly applying the remainder function so that the number is
+;; must manage stays small.
+
+;; Exercise 1.26 Louis Reasoner is having great difficulty doing
+;; Exercise 1.24. His `fast-prime?` test seems to run more slowly
+;; than his `prime?` test. Louis calls his friend Eva Lu Ator over
+;; to help. When they examine Louis's code, they find that he has
+;; rewritten the `expmod` procedure to use explicit multiplication,
+;; rather than calling `square`:
+
+(define (expmod-3 base exp m)
+  (cond ((= exp 0) 1)
+        ((even? exp)
+         (remainder (* (expmod-3 base (/ exp 2) m)
+                       (expmod-3 base (/ exp 2) m))
+                    m))
+        (else (remainder (* base
+                            (expmod-3 base (- exp 1) m))
+                         m))))
+
+;; "I don't see what difference that could make," says Louis. "I do."
+;; says Eva. "By writing the procedure like that, you have transformed
+;; the θ(log n) process into a θ(n) process." Explain.
+
+;; The function doubles the number of calls to `expmod`, so rather than
+;; generating each iteration's value, it is calculating each iteration's
+;; value twice, which is more expensive than simply taking the value and
+;; multiplying it twice.
