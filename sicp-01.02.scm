@@ -631,7 +631,7 @@
 
 (define (fermat-test n)
   (define (try-it a)
-    (= (expmod-2 a n n) a))
+    (= (expmod a n n) a))
   (try-it (+ 1 (random-integer (- n 1)))))
 
 (define (fast-prime? n times)
@@ -902,3 +902,22 @@
 ;; generating each iteration's value, it is calculating each iteration's
 ;; value twice, which is more expensive than simply taking the value and
 ;; multiplying it twice.
+
+;; Exericse 1.27 Demonstrate that the Carmichael numbers listed in Footnote
+;; 1.47 really do fool the Fermat test. That is, write a procedure that
+;; takes an integer `n` and tests whether `a^n` is congruent to `a` modulo
+;; `n` for every `a < n`, and try your procedure on the given Carmichael
+;; numbers (561, 1105, 1729, 2465, 2821, 6601)
+
+(define first-carmichaels '(561 1105 1729 2465 2821 6601))
+
+(define (test-carmichaels-fool-fermat carmichaels)
+  (define (iter i rem)
+    (cond ((null? rem) #t)
+          ((= i (car rem)) (iter 2 (cdr rem)))
+          ((not  (= i (expmod i (car rem) (car rem)))) #f)
+          (else (iter (+ i 1) rem))))
+  (iter 2 carmichaels))
+
+;;> (test-carmichaels-fool-fermat first-carmichaels)
+;; #t
