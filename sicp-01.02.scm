@@ -631,7 +631,7 @@
 
 (define (fermat-test n)
   (define (try-it a)
-    (= (expmod a n n) a))
+    (= (expmod-2 a n n) a))
   (try-it (+ 1 (random-integer (- n 1)))))
 
 (define (fast-prime? n times)
@@ -798,14 +798,79 @@
 ;; 10000000000099 *** 1.0
 ;;
 ;; it seems to run at pretty much constant time
-;;#;38> (search-for-primes 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 3)
-;;1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000139 *** 10.0
-;;1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000951 *** 13.0
-;;1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001503 *** 8.0
 
+;; Exericse 1.25 Alyssa P Hacker complains that we went to a lot of extra
+;; work in writing `expmod`. After all, she says, since we already know
+;; how to compute exponentials, we could simply have written
 
+(define (expmod-2 base exp m)
+  (remainder (fast-exp base exp) m))
 
+;; Is she correct? Would this procedure serve as well for our fast prime
+;; tester? Explain.
 
+;; The fast-prime? test runs extremely slowly with `fast-exp2`:
+;;> (search-for-primes 100000 3)
+;; 100003 *** 3351.0
+;; 100019 *** 3157.0
+;; 100043 *** 3272.0
+;;
+;; and with `fast-exp`:
+;; 100003 *** 2781.0
+;; 100019 *** 2790.0
+;; 100043 *** 2463.0
 
+;; stack trace using fast-exp:
+;; ((even? 14) ==> #f
+;; (* 14 (fast-exp 14 (- 101 1))))
+;; (* 14 (fast-exp 14 100))
+;; (* 14 (square (fast-exp 14 50)))
+;; (* 14 (square (square (fast-exp 14 25))))
+;; (* 14 (square (square (* 14 (fast-exp 14 24)))))
+;; (* 14 (square (square (* 14 (square (fast-exp 14 12))))))
+;; (* 14 (square (square (* 14 (square (square (fast-exp 14 6)))))))
+;; (* 14 (square (square (* 14 (square (square (square (fast-exp 14 3))))))))
+;; (* 14 (square (square (* 14 (square (square (square (* 14 (fast-exp 14 2)))))))))
+;; (* 14 (square (square (* 14 (square (square (square (* 14 (square (fast-exp 14 1))))))))))
+;; (* 14 (square (square (* 14 (square (square (square (* 14 (square (* 41 (fast-exp 14 0)))))))))))
+;; (* 14 (square (square (* 14 (square (square (square (* 14 (square (* 41 1)))))))))))
+;; (* 14 (square (square (* 14 (square (square (square (* 14 (square 41)))))))))
+;; (* 14 (square (square (* 14 (square (square (square (* 14 1681))))))))
+;; (* 14 (square (square (* 14 (square (square (square 23534)))))))
+;; (* 14 (square (square (* 14 (square (square 553849156))))))
+;; (* 14 (square (square (* 14 (square 306748887601912336)))))
+;; (* 14 (square (square (* 14 94094880045010647641438524228976896))))
+;; (* 14 (square (square 1317328320630149066980139339205676544)))
+;; (* 14 (square 1735353904334248823906116704779388167603153796457956072810231672751783936))
+;; (* 14 3011453173288121219057498582519675644730423948834689552469378853456503646141273927586936304602858350461277330723710280176672679461221070427652096)
+;; 42160344426033697066804980155275459026225935283685653734571303948391051045977834986217108264440016906457882630131943922473417512457094985987129344
+;; (remainder 42160344426033697066804980155275459026225935283685653734571303948391051045977834986217108264440016906457882630131943922473417512457094985987129344 101)
 
+;; in contrast, with `expmod`:
+;; (expmod 14 101 101)
+;; (remainder (* 14 (expmod 14 100 101)) 101)
+;; (remainder (* 14 (remainder (square (expmod 14 25 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (expmod 14 24 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (expmod 14 12 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (expmod 14 6 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (expmod 14 3 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (remainder (* 14 (expmod 14 2 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (remainder (* 14 (remainder (square (expmod 14 1 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (remainder (* 14 (remainder (square (remainder (* 14 (expmod 14 0 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (remainder (* 14 (remainder (square (remainder (* 14 1) 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (remainder (* 14 (remainder (square (remainder 14 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (remainder (* 14 (remainder (square 14) 101)) 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square (remainder (square (remainder (* 14 95) 101)) 101)) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder (square 87) 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square (remainder 7569 101)) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder (square 95) 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 (remainder 9025 101)) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder (* 14 36) 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square (remainder 504 101)) 101)) 101)
+;; (remainder (* 14 (remainder (square 100) 101)) 101)
+;; (remainder (* 14 (remainder 10000 1)) 101)
+;; (remainder (* 14 1) 101)
+;; (remainder 14 101)
+;; 14
 
+;; thus, it limits the size of the computation because procedure is constantly applying the remainder function so that the number is must manage stays small.
