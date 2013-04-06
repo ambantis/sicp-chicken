@@ -1,5 +1,12 @@
 ;; Structure & Interpretation of Computer Programs, Chapter 1
 ;; ELEMENTS OF PROGRAMMING
+
+;; It turns out that very large numbers in scheme have a default behavior
+;; of switching to flonums, thus, it is necessary to import the numbers
+;; egg for very large numbers in scheme.
+
+(use numbers)
+
 ;;
 ;; 1.2 PROCEDURES AND THE PROCESSES THEY GENERATE
 ;; ==============================================
@@ -507,10 +514,10 @@
 ;; Given GCD(a,b) => GCD(b,r) where a % b = r. This is Euclid's Algorithm,
 ;; which can be expressed as
 ;;
-(define (gcd a b)
+(define (gcd-1 a b)
   (if (= b 0)
       a
-      (gcd b (remainder a b))))
+      (gcd-1 b (remainder a b))))
 
 ;; This iterative process has a number of steps that grows as a logarithm of
 ;; the numbers involved. *Lame's Theorem* states that if Euclid's Algorithm
@@ -563,17 +570,11 @@
 (define (smallest-divisor n)
   (define (square x) (* x x))
   (define (divides? a b) (= (remainder b a) 0))
-  (define (find-divisor n test-divisor i)
-    (cond ((> (square test-divisor) n)
-           (begin
-             (print i " iterations to find divisor for " n)
-             n))
-          ((divides? test-divisor n)
-           (begin
-             (print i " iterations to find divisor for " n)
-             test-divisor))
-          (else (find-divisor n (+ test-divisor 1) (+ i 1)))))
-  (find-divisor n 2 1))
+  (define (find-divisor n test-divisor)
+    (cond ((> (square test-divisor) n) n)
+          ((divides? test-divisor n) test-divisor)
+          (else (find-divisor n (+ test-divisor 1)))))
+  (find-divisor n 2))
 
 (define (prime? n)
   (= (smallest-divisor n) n))
@@ -605,11 +606,28 @@
 
 (define (expmod base exp m)
   (define (square n) (* n n))
-  (cond ((= exp 0) 0)
-        ((even? exp)
-         (remainder (square (expmod base (/ exp 2) m)) m))
-        (else
-         (remainder (* base (expmod base (- exp 1) m)) m))))
+  (cond ((= exp 0) 1)
+        ((even? exp) (remainder
+                      (square (expmod base (/ exp 2) m))
+                      m))
+        (else (remainder
+               (* base
+                  (expmod base (- exp 1) m))
+               m))))
+
+;; srfi-27 has (random-integer n) because the function random has an
+;; upper limit in C. http://pine.cs.yale.edu/pinewiki/C/Randomization
+;; indicates:
+;;
+;; "The rand function, declared in stdlib.h, returns a random integer
+;; in the range 0 to RAND_MAX (inclusive) every time you call it. On
+;; machines using the GNU C library RAND_MAX is equal to INT_MAX or
+;; 231-1, but it may be as small as 32767. There are no particularly
+;; strong guarantees about the quality of random numbers that rand
+;; returns, but it should be good enough for casual use, and has the
+;; advantage that as part of the C standard you can assume it is
+;; present almost everywhere."
+(use srfi-27)
 
 (define (fermat-test n)
   (define (try-it a)
@@ -670,11 +688,11 @@
    (display n) (display " *** ") (display elapsed-time) (newline))
   (define (iter i count start-time)
     (cond ((= count number) (print "done"))
-          ((prime? i)
+          ((fast-prime? i 3)
            (begin
              (report-prime i (- (current-milliseconds) start-time))
-             (iter (+ i 2) (+ count 1) (current-milliseconds))))
-          (else (iter (+ i 2) count (current-milliseconds)))))
+             (iter (+ i 1) (+ count 1) (current-milliseconds))))
+          (else (iter (+ i 1) count (current-milliseconds)))))
   (iter (+ floor 1) 0 (current-milliseconds)))
 
 ;;> (search-for-primes 100000000000 3)
@@ -717,105 +735,77 @@
       (+ n 2)))
 
 ;;> (search-for-primes 100000000000 3)
-;;100000000003 *** 125.0
-;;100000000019 *** 117.0
-;;100000000057 *** 117.0
+;; 100000000003 *** 125.0
+;; 100000000019 *** 117.0
+;; 100000000057 *** 117.0
 
 ;;> (search-for-primes 1000000000000 3)
-;;1000000000039 *** 367.0
-;;1000000000061 *** 369.0
-;;1000000000063 *** 369.0
+;; 1000000000039 *** 367.0
+;; 1000000000061 *** 369.0
+;; 1000000000063 *** 369.0
 
 ;;> (search-for-primes 10000000000000 3)
-;;10000000000037 *** 1181.0
-;;10000000000051 *** 1165.0
-;;10000000000099 *** 1166.0
+;; 10000000000037 *** 1181.0
+;; 10000000000051 *** 1165.0
+;; 10000000000099 *** 1166.0
 
 ;;> (/ 185 117)
-;;1.58119658119658
+;; 1.58119658119658
 ;;
 ;;> (/ 585 369)
-;;1.58536585365854
+;; 1.58536585365854
 ;;
 ;;> (/ 1857 1166)
-;;1.5926243567753
+;; 1.5926243567753
 ;;
 ;;
 ;; VERSION WITH NEXT
 ;; =======================================
-;;6 iterations to find divisor for 100000000001
-;;158115 iterations to find divisor for 100000000003
-;;100000000003 *** 144.0
-;;2 iterations to find divisor for 100000000005
-;;177 iterations to find divisor for 100000000007
-;;4 iterations to find divisor for 100000000009
-;;2 iterations to find divisor for 100000000011
-;;2751 iterations to find divisor for 100000000013
-;;3 iterations to find divisor for 100000000015
-;;2 iterations to find divisor for 100000000017
-;;158115 iterations to find divisor for 100000000019
-;;100000000019 *** 132.0
-;;16767 iterations to find divisor for 100000000021
-;;2 iterations to find divisor for 100000000023
-;;3 iterations to find divisor for 100000000025
-;;15 iterations to find divisor for 100000000027
-;;2 iterations to find divisor for 100000000029
-;;9 iterations to find divisor for 100000000031
-;;1890 iterations to find divisor for 100000000033
-;;2 iterations to find divisor for 100000000035
-;;4 iterations to find divisor for 100000000037
-;;8094 iterations to find divisor for 100000000039
-;;2 iterations to find divisor for 100000000041
-;;10 iterations to find divisor for 100000000043
-;;3 iterations to find divisor for 100000000045
-;;2 iterations to find divisor for 100000000047
-;;66 iterations to find divisor for 100000000049
-;;4 iterations to find divisor for 100000000051
-;;2 iterations to find divisor for 100000000053
-;;3 iterations to find divisor for 100000000055
-;;158115 iterations to find divisor for 100000000057
-;;100000000057 *** 132.0
-;; total of 504,172 iterations (excluding prime numbers)
+;; total of 504,172 iterations
 ;;
 ;; VERSION ITERATING THROUGH EVERY NUMBER
 ;; ======================================
-;;10 iterations to find divisor for 100000000001
-;; 316227 iterations to find divisor for 100000000003
-;; 100000000003 *** 220.0
-;; 2 iterations to find divisor for 100000000005
-;; 352 iterations to find divisor for 100000000007
-;; 6 iterations to find divisor for 100000000009
-;; 2 iterations to find divisor for 100000000011
-;; 5500 iterations to find divisor for 100000000013
-;; 4 iterations to find divisor for 100000000015
-;; 2 iterations to find divisor for 100000000017
-;; 316227 iterations to find divisor for 100000000019
-;; 100000000019 *** 214.0
-;; 33532 iterations to find divisor for 100000000021
-;; 2 iterations to find divisor for 100000000023
-;; 4 iterations to find divisor for 100000000025
-;; 28 iterations to find divisor for 100000000027
-;; 2 iterations to find divisor for 100000000029
-;; 16 iterations to find divisor for 100000000031
-;; 3778 iterations to find divisor for 100000000033
-;; 2 iterations to find divisor for 100000000035
-;; 6 iterations to find divisor for 100000000037
-;; 16186 iterations to find divisor for 100000000039
-;; 2 iterations to find divisor for 100000000041
-;; 18 iterations to find divisor for 100000000043
-;; 4 iterations to find divisor for 100000000045
-;; 2 iterations to find divisor for 100000000047
-;; 130 iterations to find divisor for 100000000049
-;; 6 iterations to find divisor for 100000000051
-;; 2 iterations to find divisor for 100000000053
-;; 4 iterations to find divisor for 100000000055
-;; 316227 iterations to find divisor for 100000000057
-;; 100000000057 *** 213.0
-;; (+ 316227 2 352 6 2 550 4 2 316227 33532 2 4 28 2 16 3778 2 6 16186 2 18 4 1380 6 2 4 316227)
-;; 1004571
+;; total of 1,004,571 iterations
 ;; (/ 1004571 504172)
 ;; 1.99251644280127
 ;;
 ;; The answer has to do with the fact that the procedure is more than just
 ;; the iterations of smallest-divisor.
+
+;; Exericse 1.24 Modify the `timed-prime-test` procedure of Exercise 1.22
+;; to use `fast-prime?` (the Fermat method), and test each of the 12 primes
+;; you found in that exercise. Since the Fermat test has θ(log n) growth
+;; how would you expect the time to test primes near 1,000,000 to compare
+;; with the time needed to test primes near 1,000? Do your data bear this
+;; out? Can you explain any discrepancy you find?
+
+;; SEARCH-FOR-PRIMES USING FAST-PRIME? TEST
+;; ========================================
+;;
+;;> (search-for-primes 100000000000 3)
+;; 100000000003 *** 2.0
+;; 100000000019 *** 1.0
+;; 100000000057 *** 1.0
+;;
+;;> (search-for-primes 1000000000000 3)
+;; 1000000000039 *** 0.0
+;; 1000000000061 *** 0.0
+;; 1000000000063 *** 1.0
+;;
+;;#;6> (search-for-primes 10000000000000 3)
+;; 10000000000037 *** 0.0
+;; 10000000000051 *** 1.0
+;; 10000000000099 *** 1.0
+;;
+;; it seems to run at pretty much constant time
+;;#;38> (search-for-primes 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 3)
+;;1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000139 *** 10.0
+;;1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000951 *** 13.0
+;;1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001503 *** 8.0
+
+
+
+
+
+
 
