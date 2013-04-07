@@ -564,7 +564,7 @@
 ;; One has an order of growth of θ(sqrt(n)) and the probabilistic algorithm
 ;; with an order of growth θ(log n).
 ;;
-;; The following probram finds the smallest integral divosor (greater than 1)
+;; The following procedure finds the smallest integral divosor (greater than 1)
 ;; of a given number n.
 
 (define (smallest-divisor n)
@@ -921,3 +921,61 @@
 
 ;;> (test-carmichaels-fool-fermat first-carmichaels)
 ;; #t
+
+;; Exercise 1.28 One variant of the Fermat test that cannot be fooled is
+;; called the _Miller-Rabin test_ (Miller 1976; Rabin 1980). This starts
+;; from an alternate form of Fermat's Little Theorem, which states that
+;; if `n` is a prime number and `a` is any positive integer less than `n`,
+;; then a^(n-1) is congruent to 1 % n. To test the primality of a number
+;; `n` using the `expmod` procedure. However, whenever we perform the
+;; squaring step in `expmod`, we check to see if we have discovered a
+;; "nontrivial square root of 1 modulo n," that is, a number not equal
+;; to 1 or n-1 whose square is equal to 1 modulo n. It is possible to
+;; prove that if such a nontrivial square root of 1 exists, then `n` is
+;; not prime. It is also possible to prove that if `n` is an odd number
+;; that it is not prime, then, for at least half the numbers `a<n`
+;; computing a^(n-1) in this way will reveal a nontrivial square root of
+;; `1 mod n`. (This is why the Miller-Rabin test cannot be foolsed.)
+;; Modify the `expmod` procedure to signal if it discovers a nontrival
+;; square root of 1, and use this to implement the Miller-Rabin test with
+;; a procedure analogous to `fermat-test`. Check your procedure by testing
+;; various known primes and non-primes. Hint: One convenient way to make
+;; `expmod` signal is to have it return 0.
+
+;; given (= (prime? n) #t) AND (= (< a n) #t)
+;; then (expt a (- n 1)) ~~ (remainder 1 n)
+;; nontrivial square root => (not (or (= a 1) (= a (- n 1))))
+;;                           (= (expt a 2) (remainder 1 n))
+;;
+;;
+
+(define (nontrival-sqrt? a n)
+  (define (square x) (* x x))
+  (and (not (= a 1))
+       (not (= a (- n 1)))
+       (= (remainder (square a) n) 1)))
+
+(define (expmod-miller-rabin base exp m)
+(define (nontrival-sqrt? a n)
+  (define (square x) (* x x))
+  (and (not (= a 1))
+       (not (= a (- n 1)))
+       (= (remainder (square a) n) 1)))
+  (define (square n)
+    (if (nontrival-sqrt? n m)
+        0
+        (* n n)))
+  (cond ((= exp 0) 1)
+        ((nontrival-sqrt? base m) 0)
+        ((even? exp) (remainder
+                      (square (expmod-miller-rabin base (/ exp 2) m))
+                      m))
+        (else (remainder
+               (* base
+                  (expmod-miller-rabin base (- exp 1) m))
+               m))))
+
+(define (miller-rabin-test n)
+  (define (try-it a)
+    (= (expmod-miller-rabin a (- n 1) n) 1))
+  (try-it (+ 2 (random-integer (- n 2)))))
