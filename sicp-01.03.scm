@@ -72,7 +72,7 @@
 
 ;; To do an integal of a function f can be expressed as
 
-(define (integal f a b dx)
+(define (integral f a b dx)
   (define (add-dx x)
     (+ x dx))
   (* (sum f (+ a (/ dx 2.0)) add-dx b)
@@ -94,9 +94,14 @@
 
 ;; y => (* f (+ a (* k h)))
 ;; h => (/ (- b a) n)
-(define (simpson-rule f a b n)
-  (define (h a b n)
+(define (simpsons-rule f a b n)
+  (define h
     (/ (- b a) n))
-  (define (y f a h k)
-    (/ (- b a) n))
-  )
+  (define (term k)
+    (* (cond ((odd? k) 4)
+             ((or (= k 0) (= k n)) 1)
+             (else 2))
+       (y k)))
+  (define (y k)
+    (f (+ a (* k h))))
+  (/ (* h (sum term 0 inc n)) 3))
