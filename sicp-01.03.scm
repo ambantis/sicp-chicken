@@ -78,8 +78,6 @@
   (* (sum f (+ a (/ dx 2.0)) add-dx b)
      dx))
 
-
-
 ;; Exercise 1.29 Simpson's Rule is a more accurate of numerical integration
 ;; than the method illustrated above. Using Simpson's Rule, the integral of
 ;; a function `f` between `a` and `b` is approximated as:
@@ -105,3 +103,28 @@
   (define (y k)
     (f (+ a (* k h))))
   (/ (* h (sum term 0 inc n)) 3))
+
+;; Exercise 1.30 The sum procedure above generates a linear recursion.
+;; The procedure can be rewritten so that the sum is performed iteratively.
+;; Show how to do this by filling in the missing expressions in the
+;; following definition:
+;;
+;;     (define (sum term a next b)
+;;       (define (iter a result)
+;;         (if <??>
+;;             <??>
+;;             (iter <??> <??>))))
+;;       (iter <??> <??>))
+
+(define (sum-iter term a next b)
+  (define (iter a acc)
+    (if (or (= a b) (> a b))
+        acc
+        (iter (next a) (+ acc (term a)))))
+  (iter a 0))
+
+(define (integral-with-iter f a b dx)
+  (define (add-dx x)
+    (+ x dx))
+  (* (sum-iter f (+ a (/ dx 2.0)) add-dx b)
+     dx))
