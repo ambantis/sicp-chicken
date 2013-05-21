@@ -117,10 +117,10 @@
 ;;       (iter <??> <??>))
 
 (define (sum-iter term a next b)
-  (define (iter a acc)
+  (define (iter a result)
     (if (or (= a b) (> a b))
-        acc
-        (iter (next a) (+ acc (term a)))))
+        result
+        (iter (next a) (+ result (term a)))))
   (iter a 0))
 
 (define (integral-with-iter f a b dx)
@@ -128,3 +128,44 @@
     (+ x dx))
   (* (sum-iter f (+ a (/ dx 2.0)) add-dx b)
      dx))
+
+;; Exercise 1.31 The sum procedure is only the simplest of a vast number of similar
+;; abstractions that can be captured as higher-order procedures. Write an analogous
+;; procedure called product that returns the product of the values of a function at
+;; points over a given range. Show how to define factorial in terms of product.
+;; Also, use product to compute approximations to \pi using the formula:
+;;
+;; \pi / 4 = (2*4*4*6*6*8...) / (3*3*5*5*7*7...)
+;;
+;; Do both a recursive and iterative version.
+
+(define (product term a next b)
+  (if (> a b)
+      1
+      (* (term a)
+         (product term (next a) next b))))
+
+(define (product-iter term a next b)
+  (define (iter a result)
+    (if (or (= a b) (> a b))
+        result
+        (iter (next a) (+ result (term a)))))
+  (iter a 1))
+
+(define (fact-with-product-recursive n)
+  (product identity 1 inc n))
+
+(define (fact-with-product-iter n)
+  (product identity 1 inc n))
+
+(define (wallis-product n)
+  (define (wallis-term i)
+    (*
+     (/
+      (* 2.0 i)
+      (- (* 2 i) 1))
+     (/
+      (* 2.0 i)
+      (+ (* 2 i) 1))))
+  (* 2 (product wallis-term 1 inc n)))
+  
