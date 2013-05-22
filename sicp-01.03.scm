@@ -129,11 +129,13 @@
   (* (sum-iter f (+ a (/ dx 2.0)) add-dx b)
      dx))
 
-;; Exercise 1.31 The sum procedure is only the simplest of a vast number of similar
-;; abstractions that can be captured as higher-order procedures. Write an analogous
-;; procedure called product that returns the product of the values of a function at
-;; points over a given range. Show how to define factorial in terms of product.
-;; Also, use product to compute approximations to \pi using the formula:
+;; Exercise 1.31 The sum procedure is only the simplest of a vast
+;; number of similar abstractions that can be captured as higher-order
+;; procedures. Write an analogous procedure called product that
+;; returns the product of the values of a function at points over a
+;; given range. Show how to define factorial in terms of product.
+;; Also, use product to compute approximations to \pi using the
+;; formula:
 ;;
 ;; \pi / 4 = (2*4*4*6*6*8...) / (3*3*5*5*7*7...)
 ;;
@@ -169,3 +171,86 @@
       (+ (* 2 i) 1))))
   (* 2 (product wallis-term 1 inc n)))
   
+;; Exercise 1.32 Show that sum and product are both special cases of a still
+;; more general notion called accumulate that combines a collection of terms,
+;; using some general accumulation function:
+;;
+;;           (accumulate combiner null-value term a next b)
+;;
+;; Write accumulate and show how sum and product can both be defined as
+;; simple calls to accumulate. Write both iterative and recursive versions.
+
+(define (accumulate1 combiner null-value term a next b)
+  (if (> a b)
+      null-value
+      (combiner (term a)
+                (accumulate1 combiner null-value term (next a) next b))))
+
+(define (accumulate2 combiner null-value term a next b)
+  (define (iter a result)
+    (if (> a b)
+        result
+        (iter (next a) (combiner result (term a)))))
+  (iter a null-value))
+
+;; Exercise 1.33 You can obtain an even more general verison of accumulate
+;; by introducing the notion of /filter/ on the terms to be combined. That
+;; is, combine only those terms derived from values in the range that
+;; satisfy a specified condition. The resulting `filtered-accumulate`
+;; abstraction takes the same arguments as `accumulate`, together with
+;; an additional predicate of one argument that specifies the filter. Write
+;; `filtered-accumulate` as a procedure. Show how to express the following
+;; using `filtered-accumulate`:
+;;
+;;     (a) the sum of the squares of all prime numbers from a to b
+;;     (b) teh
+
+(define (filter-accumulate1 filter combiner null-value term a next b)
+  (cond ((> a b) null-value)
+        ((filter a) (combiner (term a)
+                              (filter-accumulate1
+                               filter
+                               combiner
+                               null-value
+                               term
+                               (next a)
+                               next
+                               b)))
+        (else (combiner null-value
+                        (filter-accumulate1
+                         filter
+                         combiner
+                         null-value
+                         term
+                         (next a)
+                         next
+                         b)))))
+
+(define (filter-accumulate2 filter combiner null-value term a next b)
+  (define (iter a result)
+    (cond ((> a b) result)
+          ((filter a) (iter (next a) (combiner result (term a))))
+          (else (iter (next a) result))))
+  (iter a null-value))
+
+(define (smallest-divisor n)
+  (define (square x) (* x x))
+  (define (divides? a b) (= (remainder b a) 0))
+  (define (find-divisor n test-divisor)
+    (cond ((> (square test-divisor) n) n)
+          ((divides? test-divisor n) test-divisor)
+          (else (find-divisor n (+ test-divisor 1)))))
+  (find-divisor n 2))
+
+(define (square n) (* n n))
+
+(define (prime? n)
+  (if (< n 2)
+      #f
+      (= (smallest-divisor n) n)))
+
+(define (sum-primes-a-to-b1 a b)
+  (filter-accumulate1 prime? + 0 square a inc b))
+
+(define (sum-primes-a-to-b2 a b)
+  (filter-accumulate2 prime? + 0 square a inc b))
