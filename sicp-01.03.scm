@@ -254,3 +254,190 @@
 
 (define (sum-primes-a-to-b2 a b)
   (filter-accumulate2 prime? + 0 square a inc b))
+
+;; 1.3.2 Constructing Procedures Using Lambda
+;; ------------------------------------------
+;;
+;; Using lambda, we can construct functions with no name, as an
+;; alternative to defining one-off auxiliary functions. For example,
+
+(define (pi-sum-heavy a b)
+  (define (pi-term x)
+    (/ 1.0 (* x (+ x 2))))
+  (define (pi-next x)
+    (+ x 4))
+  (sum pi-term a pi-next b))
+
+(define (pi-sum-light a b)
+  (sum (lambda (x) (/ 1.0 (* x (+ x 2))))
+       a
+       (lambda (x) (+ x 4))
+       b))
+
+;; Thus, we arrive at the same point, without having to construct so many
+;; auxiliary helpers. In general, lambda has the following form:
+;;
+;;    (lambda (<formal-parameters>) <body>)
+;;
+;; for example, in the expression f(x,y) = x(1+xy)^2+y(1-y)+(1+xy)(1-y)
+;;
+;; could be expressed as
+;;
+;;     a = 1 + xy
+;;     b = 1 - y
+;;     f(x,y) = xa^2 + yb + ab
+;;
+;; It is possible to create a procedure that computes /f/, including as
+;; local variables, not only `x` and `y` but also the names of intermediate
+;; values like `a` and `b`.
+
+(define (f-helper-way x y)
+  (define (f-helper a b)
+    (+ (* x (square a))
+       (* y b)
+       (* a b)))
+  (f-helper (+ 1 (* x y))
+            (- 1 y)))
+
+(define (f-lambda-way x y)
+  ((lambda (a b)
+     (+ (* x (square a))
+        (* y b)
+        (* a b)))
+   (+ 1 (* x y))
+   (- 1 (* x y))))
+
+(define (f-let-way x y)
+  (let ((a (+ 1 (* x y)))
+        (b (- 1 y)))
+    (+ (* x (square a))
+       (* y b)
+       (* a b))))
+
+;; The general form of a let expression is
+;;
+;;     (let ((<var1> <exp1>)
+;;           (<var2> <exp2>)
+;;           ...
+;;           (<varN> <expN>))
+;;        <body>)
+;;
+;; Note that variables' values are computered outside the `let`. This
+;; matters when the expressions that provide the values for the local
+;; variables depend upon variables having the same names as the local
+;; variables themselves. For example, if the value of x is 2, the
+;; expression
+;;
+;;     (let ((x 3)
+;;           (y (+ x 2)))
+;;      (* x y))
+;;
+;; will have the value 12 because, inside the body of `let`, x will be 3
+;; and y will be 4 (which is the outer x plus 2).
+;;
+;; The preference is to use internal define for internal procedures rather
+;; than internal value assignments.
+
+;; Exercise 1.34 Suppose we define the procedure
+;;
+;;     (define (f g) (g 2))
+;;
+;; Then we have (f square) -> 4 and (f (lambda (z) (* z (+ z 1)))) -> 6
+;;
+;; What hapens if we (perversely ask the interpreter to evaluate the
+;; combination (f f)? Explain?
+;;
+;; Answer: We end up with a stack overflow, with the loop endlessly calling
+;; itself without any termination condition.
+
+;; 1.3.3 Procedures as General Methods
+;; -----------------------------------
+;; In this section, we go through general methods such as fixed point.
+;;
+;; The *half-interval method* is a simple but powerful technique for
+;; finding the roots of an equation f(x) = 0, where f is a continuous
+;; function. The idea is that, if we are given points *a* and *b*, such
+;; that f(a) < 0 < f(b), then f must have at least one zero between a
+;; and b. To locate a zero, let x be the average of a and b, and compute
+;; f(x). If f(x)>0, then f must have a zero between a and x. If f(x)<0,
+;; the f must have a zero between a and x. Since the interval of uncertainty
+;; is reduced by half at each step of the process, the number of steps
+;; required grows as θ(log(L/T)), where L is the length of the interval and
+;; T is the error tolerance.
+;;
+
+(define (search f neg-point pos-point)
+  (let ((midpoint (average neg-point pos-point)))
+    (if (close-enough? neg-point pos-point)
+        midpoint
+        (let ((test-value (f midpoint)))
+          (cond ((positive? test-value)
+                 (search f neg-point midpoint))
+                ((negative? test-value)
+                 (search f midpoint pos-point))
+                (else midpoint))))))
+
+(define (close-enough? x y)
+  (< (abs (- x y)) 0.001))
+
+(define (average x y) (/ (+ x y) 2))
+
+;; search can be awkward to use directly, because we can accidentally give
+;; points that are invalid. Instead, we use it through the following method:
+
+(define (half-interval-method f a b)
+  (let ((a-value (f a))
+        (b-value (f b)))
+    (cond ((and (negative? a-value) (positive? b-value))
+           (search f a b))
+          ((and (positive? a-value) (negative? b-value ))
+           (search f b a))
+          (else (error "Values are not of opposite sign" a b)))))
+
+;; Here, we can use the half-interval-method to search for a root of the
+;; equation x^3 - 2x - 3 = 0, between 1 and 2
+;;
+;; (half-interval-method (lambda (x) (- (* x x x) (* x 2) 3))
+;;                       1.0
+;;                       2.0) --> 1.893.6640625
+;;
+;; A number x is called a *fixed point* of a function f if x satisfies
+;; the equation f(x) = x. For some functions f, we can locate the fixed
+;; point by beginning with an initial guess and applying f repeatedly,
+;;
+;;     f(x), f(f(x)), f(f(f(x))), ...
+;;
+;; until the value does not change very much. Thus:
+
+(define tolerance 0.00001)
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2))
+       tolerance))
+  (define (try guess)
+    (let ((next (f guess)))
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+;; unfortunately, sometimes guesses do not converge, for example:
+
+(define (sqrt-bad x)
+  (fixed-point (lambda (y) (/ x y)) 1.0))
+
+;; guess y1
+;; guess y2 = x/y1
+;; guess y3 = x/y2 => x/(x/y1) => x * (y1/x) => y1
+;;
+;; Thus, we have an infinite loop that does not converge. One way to prevent
+;; such large oscillations is by preventing the guesses from changing so
+;; much. Since the answer is between the guess y and x/y, we can take the
+;; average of y and x/y, thus (y + x/y)/2 instead of x/y. Thus,
+
+(define (sqrt-better x)
+  (fixed-point (lambda (y) (average y (/ x y))) 1.0))
+
+;; Exercise 1.35 Show that the golden ratio Φ is a fixed-point of the
+;; transformation x ==> 1 + 1/x, and use this fact to compute Φ by means
+;; of the fixed-point procedure.
