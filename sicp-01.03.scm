@@ -444,3 +444,80 @@
 
 (define (golden-ratio x)
   (fixed-point (lambda (y) (+ 1 (/ 1 y))) 1.0))
+
+;; Exercise 1.36 Modify fixed-point so that it prints the sequence of
+;; approximations it generates. Then find a solution to x^x = 1000 by
+;; finding the fixed point of x ==> log(1000)/log(x). (Use Scheme's
+;; primitive *log* procedure, which computes natural logarithms.) Compare
+;; the number of steps this takes with and without average damping. (Note
+;; that you cannot start *fixed-point* with a guess of 1, as this would
+;; cause division by log(1) = 0.)
+
+(define (fixed-point-with-print f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2))
+       tolerance))
+  (define (try guess i)
+    (let ((next (f guess)))
+      (print "i=" i ", guess=" guess)
+      (if (close-enough? guess next)
+          next
+          (try next (+ i 1)))))
+  (try first-guess 1))
+
+(define (n-pow-n-fp1 x)
+  (fixed-point-with-print (lambda (y) (/ (log 1000) (log y))) 2.0))
+
+;; i=1, guess=2.0
+;; i=2, guess=9.96578428466209
+;; i=3, guess=3.00447220984121
+;; i=4, guess=6.27919575750716
+;; i=5, guess=3.75985070240154
+;; i=6, guess=5.2158437849259
+;; i=7, guess=4.1822071924014
+;; i=8, guess=4.82776509834459
+;; i=9, guess=4.38759338466268
+;; i=10, guess=4.6712500857639
+;; i=11, guess=4.48140361689505
+;; i=12, guess=4.6053657460929
+;; i=13, guess=4.52308496787189
+;; i=14, guess=4.57711468204734
+;; i=15, guess=4.54138248015145
+;; i=16, guess=4.56490324523083
+;; i=17, guess=4.54937267930334
+;; i=18, guess=4.55960649191329
+;; i=19, guess=4.55285387578827
+;; i=20, guess=4.55730552974826
+;; i=21, guess=4.55436906443618
+;; i=22, guess=4.556305311533
+;; i=23, guess=4.55502826357355
+;; i=24, guess=4.55587039670285
+;; i=25, guess=4.55531500119208
+;; i=26, guess=4.55568126354333
+;; i=27, guess=4.55543971573685
+;; i=28, guess=4.55559900999829
+;; i=29, guess=4.55549395753139
+;; i=30, guess=4.55556323729288
+;; i=31, guess=4.55551754841765
+;; i=32, guess=4.5555476793064
+;; i=33, guess=4.55552780851625
+;; i=34, guess=4.55554091291796
+;; 4.55553227080365
+
+(define (n-pow-n-fp2 x)
+  (fixed-point-with-print (lambda (y)
+                            (let ((term (/ (log 1000) (log y))))
+                              (average y term))) 2.0))
+;; i=1, guess=2.0
+;; i=2, guess=5.98289214233104
+;; i=3, guess=4.92216872130834
+;; i=4, guess=4.62822431819546
+;; i=5, guess=4.56834651313624
+;; i=6, guess=4.5577305909237
+;; i=7, guess=4.55590980904513
+;; i=8, guess=4.55559941161062
+;; i=9, guess=4.55554655214737
+;; 4.55553755199982
+
+;; Conclusion: using average damping reduced the number of iterations from
+;; 34 to 9.
