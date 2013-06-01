@@ -5,7 +5,7 @@
 ;; of switching to flonums, thus, it is necessary to import the numbers
 ;; egg for very large numbers in scheme.
 
-(use numbers)
+;;(use numbers)
 
 ;;
 ;; 1.3 FORMULATING ABSTRACTIONS WITH HIGHER-ORDER PROCEDURES
@@ -548,28 +548,28 @@
 ;; for successive values of k. How large must you make k in order to get an
 ;; approximation that is accurate to 4 decimal places?
 
-(define (cont-frac-recursive n d k)
+(define (cont-frac-recursive n d k next)
   (define (frac i)
     (if (> i k)
         (/ (n i) (d i))
-        (/ (n i) (+ (d i) (frac (+ i 1))))))
+        (/ (n i) (+ (d i) (frac (next i)))  )))
   (frac 1))
 
-(define (cont-frac-iter n d k)
+(define (cont-frac-iter n d k next)
   (define (iter acc i)
     (if (< i 0)
         acc
         (iter
          (/ (n i)
             (+ (d i) acc))
-         (- i 1))))
+         (next i))))
   (iter 0 k))
 
 (define (phi-reciprocal-r k)
-  (cont-frac-recursive (lambda (i) 1.0) (lambda (i) 1.0) k))
+  (cont-frac-recursive (lambda (i) 1.0) (lambda (i) 1.0) k (lambda (i) (+ i 1))))
 
 (define (phi-reciprocal-i k)
-  (cont-frac-iter (lambda (i) 1.0) (lambda (i) 1.0) k))
+  (cont-frac-iter (lambda (i) 1.0) (lambda (i) 1.0) k (lambda (i) (- i 1))))
 
 
 
