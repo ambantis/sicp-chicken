@@ -557,15 +557,31 @@
 
 (define (cont-frac-iter n d k)
   (define (iter acc i)
-    (if (> i k)
+    (if (< i 0)
         acc
-        (/ 1 (+ acc (iter acc (+ i 1))))))
-  (iter 1.0 1))
+        (iter
+         (/ (n i)
+            (+ (d i) acc))
+         (- i 1))))
+  (iter 0 k))
 
-(define (phi-reciprocal k)
+(define (phi-reciprocal-r k)
+  (cont-frac-recursive (lambda (i) 1.0) (lambda (i) 1.0) k))
+
+(define (phi-reciprocal-i k)
   (cont-frac-iter (lambda (i) 1.0) (lambda (i) 1.0) k))
+
+
 
 ;; 1/Φ approximately   => 0.61803398875
 ;; (phi-reciprocal  5) => 0.615384615384615
 ;; (phi-reciprocal 10) => 0.618055555555556
 ;; (phi-reciprocal 11) => 0.618025751072961
+
+;; Exercise 1.38 In 1737, the Swiss mathematician Leonhard Euler published
+;; a memoir *De Fractionibus Continuis*, which included a continued fraction
+;; for *e-2* where `e` is the base of the natural logarithms. In this fraction
+;; N_i are all 1, and the D_i are successively 1,2,1,1,4,1,1,6,1,1,8,...
+;; Write a program that uses your cont-frac procedure from Exercise 1.37 to
+;; approximate `e`, based on Euler's expansion.
+
