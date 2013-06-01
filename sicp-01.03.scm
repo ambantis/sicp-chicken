@@ -603,3 +603,47 @@
            (else 1.0)))
    k))
 
+;; Exercise 1.39 A continued fraction representation of the tangent function
+;; was published in 1770 by the German mathematician J.H. Lambert:
+;;
+;;      tan x = x / (1 - (x^2 / (3 - (x^2 / (5-...
+;;
+;; where x is in radians. Define a procedure (tan-cf x k) that computes an
+;; approximation to the tangent function based on Lambert's formula. k
+;; specifies the number of terms to compute, as in Exercise 1.37
+
+(define (cont-frac-x-recursive n d k x)
+  (define (frac i)
+    (if (> i k)
+        (/ (n x i) (d i))
+        (/ (n x i) (+ (d i) (frac (+ i 1)))  )))
+  (frac 1))
+
+(define (cont-frac-x-iter n d k x)
+  (define (iter acc i)
+    (if (< i 1)
+        acc
+        (iter
+         (/ (n x i)
+            (+ (d i) acc))
+         (- i 1))))
+  (iter (/ (n x k) (d k)) k))
+
+(define (tan-cont-frac-r x k)
+  (cont-frac-x-recursive
+   (lambda (x i)
+     (if (= i 1) x (* -1 (* x x))))
+   (lambda (i)
+     (if (= i 1) 1.0 (- (* i 2.0) 1)))
+   k
+   x))
+
+(define (tan-cont-frac-i x k)
+  (cont-frac-x-iter
+   (lambda (x i)
+     (if (= i 1) x (* -1 (* x x))))
+   (lambda (i)
+     (if (= i 1) 1.0 (- (* i 2.0) 1)))
+   k
+   x))
+
