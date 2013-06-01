@@ -548,30 +548,28 @@
 ;; for successive values of k. How large must you make k in order to get an
 ;; approximation that is accurate to 4 decimal places?
 
-(define (cont-frac-recursive n d k next)
+(define (cont-frac-recursive n d k)
   (define (frac i)
     (if (> i k)
         (/ (n i) (d i))
-        (/ (n i) (+ (d i) (frac (next i)))  )))
+        (/ (n i) (+ (d i) (frac (+ i 1)))  )))
   (frac 1))
 
-(define (cont-frac-iter n d k next)
+(define (cont-frac-iter n d k)
   (define (iter acc i)
-    (if (< i 0)
+    (if (< i 1)
         acc
         (iter
          (/ (n i)
             (+ (d i) acc))
-         (next i))))
-  (iter 0 k))
+         (- i 1))))
+  (iter (/ (n k) (d k)) k))
 
 (define (phi-reciprocal-r k)
-  (cont-frac-recursive (lambda (i) 1.0) (lambda (i) 1.0) k (lambda (i) (+ i 1))))
+  (cont-frac-recursive (lambda (i) 1.0) (lambda (i) 1.0) k))
 
 (define (phi-reciprocal-i k)
-  (cont-frac-iter (lambda (i) 1.0) (lambda (i) 1.0) k (lambda (i) (- i 1))))
-
-
+  (cont-frac-iter (lambda (i) 1.0) (lambda (i) 1.0) k))
 
 ;; 1/Φ approximately   => 0.61803398875
 ;; (phi-reciprocal  5) => 0.615384615384615
@@ -584,4 +582,24 @@
 ;; N_i are all 1, and the D_i are successively 1,2,1,1,4,1,1,6,1,1,8,...
 ;; Write a program that uses your cont-frac procedure from Exercise 1.37 to
 ;; approximate `e`, based on Euler's expansion.
+
+(define (e-cont-frac-r k)
+  (cont-frac-recursive
+   (lambda (i) 1.0)
+   (lambda (i)
+     (cond ((= i 1) 1.0)
+           ((= i 2) 2.0)
+           ((= (remainder (- i 2) 3) 0) (* 2.0 (+ 1 (/ 3 (- i 2)))))
+           (else 1.0)))
+   k))
+
+(define (e-cont-frac-i k)
+  (cont-frac-iter
+   (lambda (i) 1.0)
+   (lambda (i)
+     (cond ((= i 1) 1.0)
+           ((= i 2) 2.0)
+           ((= (remainder (- i 2) 3) 0) (* 2.0 (+ 1 (/ 3 (- i 2)))))
+           (else 1.0)))
+   k))
 
