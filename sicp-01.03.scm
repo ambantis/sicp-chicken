@@ -647,3 +647,110 @@
    k
    x))
 
+;; 1.3.4 Procedures as Returned Values
+;; -----------------------------------
+;; In this section we explore procedures that return procedures themselves.
+;; In the previous section, we formulated a new version of square-root with
+;; average damping. We can create express average-damping as a procedure:
+;;
+;; (define (average x y) (/ (+ x y) 2))
+
+(define (average-damp f) (lambda (x) (average x (f x))))
+
+;; The procedure takes as an argument a procedure *f* and returns as a value
+;; a procedure produced by the lambda that, when applied to a number x,
+;; produces the average of x and (f x).
+;;
+;; Using this, we can reformulate the sqrt function as follows:
+;;
+;; (define tolerance 0.00001)
+;; (define (fixed-point f first-guess)
+;;   (define (close-enough? v1 v2)
+;;     (< (abs (- v1 v2))
+;;        tolerance))
+;;   (define (try guess)
+;;     (let ((next (f guess)))
+;;       (if (close-enough? guess next)
+;;           next
+;;           (try next))))
+;;   (try first-guess))
+
+(define (sqrt-best x)
+  (fixed-point (average-damp (lambda (y) (/ x y)) 1.0)))
+
+;; As an example of reuse, observe that the cube root of x is a fixed point
+;; function of y -> x/y^2, we can can generalize the squre-root procedure
+;; to cube roots:
+
+(define (cube-root x)
+  (fixed-point (average-damp (lambda (y) (/ x (square y))))
+               1.0))
+
+;; Newton's method is the use of the fixed-point method to approximate a
+;; solution of the equation by finding a fixed point of the function *f*
+;;
+;; Basically, given a curved line (exponential function), finding the
+;; square root is asking for the x-intercept of the line. Using the midpoint
+;; algorithm, we take two points, one positive and the other negative,
+;; and calculate the midpoint of the two. If the result is negative, then
+;; the x-intercept will be between that new point and the positive guess,
+;; iterating successive approximations.
+;;
+;; With Newton's method, the next guess will be the x-intercept of the
+;; derivative at that point. The derivative is the slope of the function
+;; at a given point. Note that in some cases, the derivative will not be
+;; "well-behaved" and diverge from that root.
+;;
+;; The very general form says this:
+;;
+;; Given x1 and f(x1),
+;;
+;; y -  y1   = m     *(x - x1) # the slope formula
+;; y - f(x1) = f'(x1)*(x - x1)
+;; 0 - f(x1) = f'(x1)*(x - x1)
+;; -f(x1)/f'(x1) = x - x1
+;; thus:
+;; g(x) = x - g(x)/Dg(x)
+;;
+;; The first step in newton's method is to express the idea of a derivative
+;;
+;;                      g(x + dx) - g(x)
+;; generally: Dg(x) = -------------------
+;;                           dx
+;;
+;; Thus, we can express the idea of a derivative as follows:
+
+(define (deriv g)
+  (lambda (x) (/ (- (g (+ x dx) (g x)) dx))))
+
+;; along with the definition of dx:
+
+(define dx 0.00001)
+
+;; Thus, like average-damp, *deriv* is a procedure that takes a procedure
+;; as an argument and returns a procedure as the result. For example, given
+;;
+;; (define (cube x) (* x x x))
+;;
+;; then
+;;
+;; ((deriv cube) 5) -> 75.0014999664018
+;;
+;; Notice the double parens, that is because *(deriv cube)* returns a
+;; function that takes as its argument the value of 5. Thus, for the
+;; function f(x) = x^3, at x=5, the slope of the line at that point will
+;; be about 75.
+;;
+;; With the aid of *deriv*, we can express Newton's method as a fixed-point
+;; process:
+
+(define (newton-transform g)
+  (lambda (x) (- x (/ (g x) ((deriv g) x)))))
+(define (newtons-method g guess)
+  (fixed-point (newton-transform g) guess))
+
+;; Thus, the final and best method of expressing square root is as follows:
+
+(define (sqrt-superbest x)
+  (newtons-method
+   (lambda (y) (- square y) x)) 1.0)
