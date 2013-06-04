@@ -800,6 +800,7 @@
 
 (define (sqrt x)
   (define dx 0.00001)
+  (define tolerance 0.00001)
   (define (deriv g)
     (lambda (x) (/ (- (g (+ x dx)) (g x)) dx)))
   (define (newton-transform g)
@@ -817,4 +818,14 @@
   (fixed-point-of-transform
    (lambda (y) (- (square y) x)) newton-transform 1.0))
 
+;; (define (newtons-method g guess)
+;;  (fixed-point (newton-transform g) guess)
+
+(define (cubic a b c)
+  (lambda (x) (+ (cube x)
+                 (* a (square x))
+                 (* b x)
+                 c)))
+
+;; (newtons-method (cubic -3 -144 432) 1) -> 3.0
 
