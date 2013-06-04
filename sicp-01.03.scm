@@ -423,7 +423,7 @@
 
 ;; unfortunately, sometimes guesses do not converge, for example:
 
-(define (sqrt-bad x)
+(define (sqrt-v1 x)
   (fixed-point (lambda (y) (/ x y)) 1.0))
 
 ;; guess y1
@@ -435,7 +435,7 @@
 ;; much. Since the answer is between the guess y and x/y, we can take the
 ;; average of y and x/y, thus (y + x/y)/2 instead of x/y. Thus,
 
-(define (sqrt-better x)
+(define (sqrt-v2 x)
   (fixed-point (lambda (y) (average y (/ x y))) 1.0))
 
 ;; Exercise 1.35 Show that the golden ratio Φ is a fixed-point of the
@@ -675,8 +675,8 @@
 ;;           (try next))))
 ;;   (try first-guess))
 
-(define (sqrt-best x)
-  (fixed-point (average-damp (lambda (y) (/ x y)) 1.0)))
+(define (sqrt-v3 x)
+  (fixed-point (average-damp (lambda (y) (/ x y))) 1.0))
 
 ;; As an example of reuse, observe that the cube root of x is a fixed point
 ;; function of y -> x/y^2, we can can generalize the squre-root procedure
@@ -721,7 +721,7 @@
 ;; Thus, we can express the idea of a derivative as follows:
 
 (define (deriv g)
-  (lambda (x) (/ (- (g (+ x dx) (g x)) dx))))
+  (lambda (x) (/ (- (g (+ x dx)) (g x)) dx)))
 
 ;; along with the definition of dx:
 
@@ -751,6 +751,70 @@
 
 ;; Thus, the final and best method of expressing square root is as follows:
 
-(define (sqrt-superbest x)
+(define (sqrt-v4 x)
   (newtons-method
-   (lambda (y) (- square y) x)) 1.0)
+   (lambda (y) (- (square y) x)) 1.0))
+
+;; We've seen two ways to express the square-root computation, once as a
+;; a fixed-point process, and once using Newton's method. The fixed-point
+;; process is really a mid-point process. But really, both are fixed-point
+;; processes. Each method begins with a function and finds a fixed point
+;; of some transformation of the function. We can generalize this as:
+
+(define (fixed-point-of-transform g transform guess)
+  (fixed-point (transform g) guess))
+
+;; This very general procedure takes as its arguments a procedure *g* that
+;; computes some function, a procedure that transforms *g*, and an initial
+;; guess. The returned result is a fixed point of the transformed function.
+;;
+;; Using this procedure, we can recast the original sqrt method as:
+
+(define (sqrt-v5 x)
+  (fixed-point-of-transform
+   (lambda (y) (/ x y)) average-damp 1.0))
+
+;; In like manner, we can express the Newton transform as:
+
+(define (sqrt-v6 x)
+  (fixed-point-of-transform
+   (lambda (y) (- (square y) x)) newton-transform 1.0))
+
+;; In general, we should be altert to opportunities to identify the
+;; underlying abstractions in our programs and to build upon them and
+;; generalize them to create more powerful abstractions.
+;;
+;; Programming elements that have *first-class* status, have:
+;;
+;;   - They may be named as variables
+;;   - They may be passed as arguments
+;;   - They may be returned as results of procedures
+;;   - They may be included in data structures
+
+;; Exercise 1.40 Define a procedure *cubic* that can be used together with
+;; the *newtons-method* procedure in expressions of the form:
+;;
+;; (newtons-method (cubic a b c) 1) to approximate zeros of the cubic
+;;
+;;     x^3 + ax^2 + bx + c
+
+(define (sqrt x)
+  (define dx 0.00001)
+  (define (deriv g)
+    (lambda (x) (/ (- (g (+ x dx)) (g x)) dx)))
+  (define (newton-transform g)
+    (lambda (x) (- x (/ (g x) ((deriv g) x)))))
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2))
+       tolerance))
+  (define (fixed-point f guess)
+    (let ((next (f guess)))
+      (if (close-enough? guess next)
+          next
+          (fixed-point f next))))
+  (define (fixed-point-of-transform g transform guess)
+    (fixed-point (transform g) guess))
+  (fixed-point-of-transform
+   (lambda (y) (- (square y) x)) newton-transform 1.0))
+
+
