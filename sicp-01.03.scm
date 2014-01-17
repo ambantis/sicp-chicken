@@ -170,7 +170,7 @@
       (* 2.0 i)
       (+ (* 2 i) 1))))
   (* 2 (product wallis-term 1 inc n)))
-  
+
 ;; Exercise 1.32 Show that sum and product are both special cases of a still
 ;; more general notion called accumulate that combines a collection of terms,
 ;; using some general accumulation function:
