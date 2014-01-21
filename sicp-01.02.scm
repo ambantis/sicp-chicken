@@ -308,7 +308,7 @@
 ;; of the tree.
 ;;
 ;; The value of the *golden ratio* is (1+sqrt(5))/2 == 1.6180339887...
-;; 
+;;
 ;; Orders of growth only provides a crude description of a process
 ;; behavior. Thus, a process requiring n^2 steps and a process requiring
 ;; 1000n^2 steps and another process requiring 3n^2 + 10n + 17 steps all
@@ -322,7 +322,7 @@
 ;; computed by making use of the approximation sin =x if x is sufficently
 ;; small, and the trigonemetric identity
 ;;                                        x             x
-;;                         sin x = 3 sin --- - 4 sin^3 --- 
+;;                         sin x = 3 sin --- - 4 sin^3 ---
 ;;                                        3             3
 ;;
 ;; to reduce the size of the argument of sin. (for purposes of this exercise
@@ -474,7 +474,7 @@
 
 ;; a2 <- (bp + aq)q + (bq + aq + ap)q + (bq + aq + ap)p
 ;;    =   bpq + aqq + bqq + aqq + apq + bpq + apq + app
-;;    =   bpq + bqq + bpq + aqq + aqq + apq + apq + app 
+;;    =   bpq + bqq + bpq + aqq + aqq + apq + apq + app
 ;;    =   b(pq + qq + pq) + a(qq + qq + pq + pq + pp)
 ;;    =   b(2pq + qq) + a(pq + pq + qq) + a(pp + qq)
 ;;
