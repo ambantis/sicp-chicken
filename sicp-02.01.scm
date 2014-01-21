@@ -148,6 +148,43 @@
          (delta-y (- y1 y2)))
     (if (zero? delta-x) +inf.0 (/ delta-y delta-x))))
 
+;; Given a line, determines the inverse slope (such that the two line segments are perpendicular)
+(define (segment-inv-slope s)
+  (let ((slope (segment-slope s)))
+    (cond ((infinite? slope) 0)
+          ((zero? slope) +inf.0)
+          (else (* -1 (/ 1 slope))))))
+
+;; This function takes a slope and returns a function to mutate a point such that
+;; a new segment can be constructed from one end of the line segment to construct
+;; two line segments that are perpendicular, intersect at one end, and together
+;; form a rectangle
+(define (fn-point-mutator-alt slope)
+  ;; Given hypotenuse of an isosoles right triangle, find the length of other side
+  (define (find-a c) (sqrt (/ (* c c) 2)))
+  ;; If slope == inf, then (x,y) => (x+h,y)
+  (cond ((infinite? slope) (lambda (p len)
+                             (make-point
+                               (x-point p)
+                               (+ len (y-point p)))))
+        ;; If slope == 0, then (x,y) => (x,y+h)
+        ((zero? slope) (lambda (p len)
+                         (make-point
+                           (+ len (x-point p))
+                           (y-point p))))
+        ;; if slope < 0, then (x,y) => (x + sqrt(h^2/2), y + sqrt(h^2/2)
+        (else (lambda (p len)
+                (let ((a (find-a len)))
+                  (make-point
+                    (+ (x-point p) a)
+                    (+ (y-point p) a)))))))
+
+(define (make-segment-alt midpoint slope len)
+  (let* ((fn (fn-point-mutator-alt slope))
+         (p1 (fn midpoint (/ len 2)))
+         (p2 (fn midpoint (* -1 (/ len 2)))))
+    (make-segment p1 p2)))
+
 ;; This function takes a slope and returns a function to mutate a point such that
 ;; a new segment can be constructed from one end of the line segment to construct
 ;; two line segments that are perpendicular, intersect at one end, and together
@@ -165,27 +202,30 @@
                          (make-point
                            (x-point p)
                            (+ len (y-point p)))))
-        ;; If slope > 0, then (x,y) => (x - sqrt(h^2/2), y - sqrt(h^2/2)
-        ((positive? slope) (lambda (p len)
-                             (let ((a (find-a len)))
-                               (make-point
-                                 (- (x-point p) a)
-                                 (- (y-point p) a)))))
-        ;; if slope < 0, then (x,y) => (x + sqrt(h^2/2), y + sqrt(h^2/2)
+        ;; if slope < 0, then (x,y) => (x + sqrt(h^2/2), y - sqrt(h^2/2)
         (else (lambda (p len)
                 (let ((a (find-a len)))
                   (make-point
-                    (- (x-point p) a)
+                    (+ (x-point p) a)
                     (- (y-point p) a)))))))
 
 ;; Given a line segment and a length, construct a second line segment such that
 ;; the two line segments together form a rectangle consistent with len.
-(define (make-rect s len)
-  (let* ((slope (segment-slope s))
+(define (make-rect s1 len)
+  (let* ((slope (segment-slope s1))
          (fn (fn-point-mutator slope))
-         (p1 (end-segment s))
-         (p2 (fn p1 len)))
-    (cons s (make-segment p1 p2))))
+         (p1 (end-segment s1))
+         (p2 (fn p1 len))
+         (s2 (make-segment p1 p2)))
+    (cons s1 s2)))
+
+;; Given a line segment and a length, construct a second line segment that is perpendicular
+;; to it, with the given length, and the two intersect at the midpoint.
+(define (make-rect-alt s1 len)
+  (let* ((slope (segment-inv-slope s1))
+         (midpoint (midpoint-segment s1))
+         (s2 (make-segment-alt midpoint slope len)))
+    (cons s1 s2)))
 
 (define (get-perimeter rect)
   (* 2 (+ (len-segment (car rect)) (len-segment (cdr rect)))))
