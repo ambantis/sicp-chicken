@@ -1,6 +1,8 @@
 ;; Structure & Interpretation of Computer Programs, Chapter 2
 ;; BUILDING ABSTRACTIONS WITH DATA
 
+(use numbers)
+
 ;;
 ;; 2.1 INTRODUCTION TO DATA ABSTRACTION
 ;; ====================================
@@ -115,10 +117,13 @@
 (define (end-segment s)
   (cdr s))
 
-(define (avg a b)
-  (/ (+ a b) 2))
+(define (len-segment s)
+  (let* ((a (abs (- (x-point (start-segment s)) (x-point (end-segment s)))))
+         (b (abs (- (y-point (start-segment s)) (y-point (end-segment s))))))
+    (sqrt (+ (* a a) (* b b)))))
 
 (define (midpoint-segment s)
+  (define (avg a b) (/ (+ a b) 2))
   (let* ((p1 (start-segment s))
          (p2 (end-segment s))
          (x1 (x-point p1))
@@ -127,5 +132,94 @@
          (y2 (y-point p2)))
     (make-point (avg x1 x2) (avg y1 y2))))
 
+;; Exericse 2.3. Implement a representation for rectangles in a plane. In terms of your constructors
+;; and selectors, create procedures that compute the perimeter and area of a given rectangle. Now
+;; implement a different representation for rectangles. Can you design your system with suitable
+;; abstraction barriers , so that the same perimeter and area procedures will work using either
+;; representation?
 
+;; Given a line segment return boolean whether the slope is positive, negative, 0, or undefined.
+(define (segment-slope s)
+  (let* ((x1 (x-point (start-segment s)))
+         (y1 (y-point (start-segment s)))
+         (x2 (x-point (end-segment s)))
+         (y2 (y-point (end-segment s)))
+         (delta-x (- x1 x2))
+         (delta-y (- y1 y2)))
+    (if (zero? delta-x) +inf.0 (/ delta-y delta-x))))
 
+;; This function takes a slope and returns a function to mutate a point such that
+;; a new segment can be constructed from one end of the line segment to construct
+;; two line segments that are perpendicular, intersect at one end, and together
+;; form a rectangle
+(define (fn-point-mutator slope)
+  ;; Given hypotenuse of an isosoles right triangle, find the length of other side
+  (define (find-a c) (sqrt (/ (* c c) 2)))
+  ;; If slope == inf, then (x,y) => (x+h,y)
+  (cond ((infinite? slope) (lambda (p len)
+                             (make-point
+                               (+ len (x-point p))
+                               (y-point p))))
+        ;; If slope == 0, then (x,y) => (x,y+h)
+        ((zero? slope) (lambda (p len)
+                         (make-point
+                           (x-point p)
+                           (+ len (y-point p)))))
+        ;; If slope > 0, then (x,y) => (x - sqrt(h^2/2), y - sqrt(h^2/2)
+        ((positive? slope) (lambda (p len)
+                             (let ((a (find-a len)))
+                               (make-point
+                                 (- (x-point p) a)
+                                 (- (y-point p) a)))))
+        ;; if slope < 0, then (x,y) => (x + sqrt(h^2/2), y + sqrt(h^2/2)
+        (else (lambda (p len)
+                (let ((a (find-a len)))
+                  (make-point
+                    (- (x-point p) a)
+                    (- (y-point p) a)))))))
+
+;; Given a line segment and a length, construct a second line segment such that
+;; the two line segments together form a rectangle consistent with len.
+(define (make-rect s len)
+  (let* ((slope (segment-slope s))
+         (fn (fn-point-mutator slope))
+         (p1 (end-segment s))
+         (p2 (fn p1 len)))
+    (cons s (make-segment p1 p2))))
+
+(define (get-perimeter rect)
+  (* 2 (+ (len-segment (car rect)) (len-segment (cdr rect)))))
+
+(define (get-area rect)
+  (* (len-segment (car rect)) (len-segment (cdr rect))))
+
+;; Tests to verify that everything works
+(define horizontal-segment
+  (let ((p1 (make-point 0 0))
+        (p2 (make-point 4 0)))
+    (make-segment p1 p2)))
+(define r1 (make-rect horizontal-segment 2))
+(assert (equal? (get-perimeter r1) 12))
+(assert (equal? (get-area r1 ) 8))
+
+(define vertical-segment
+  (let ((p1 (make-point 0 3))
+        (p2 (make-point 0 0)))
+    (make-segment p1 p2)))
+(define r2 (make-rect vertical-segment 1))
+(assert (equal? (get-perimeter r2) 8))
+(assert (equal? (get-area r2) 3))
+
+(define positive-slope-segment
+  (let ((p1 (make-point 0 0))
+        (p2 (make-point 4 3)))
+    (make-segment p1 p2)))
+(define r3 (make-rect positive-slope-segment 5))
+(assert (equal? (get-area r3) 25.0))
+
+(define negative-slope-segment
+  (let ((p1 (make-point 0 0))
+        (p2 (make-point 5 -12)))
+    (make-segment p1 p2)))
+(define r4 (make-rect negative-slope-segment 13))
+(assert (equal? (get-area r4) 169.0))
