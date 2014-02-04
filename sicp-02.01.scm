@@ -62,7 +62,7 @@
   (= (* (numer x) (denom y))
      (* (numer y) (denom x))))
 
-;; Ecercise 2.1. Define a better version of `make-rat` that handles both positive and negative
+;; Exercise 2.1. Define a better version of `make-rat` that handles both positive and negative
 ;; arguments. `Make-rat` should normalize the sign so that if the rational number is positive, both
 ;; the numerator and denominator are positive, and if the rational number is negative, only the
 ;; numerator is negative.
@@ -263,3 +263,106 @@
     (make-segment p1 p2)))
 (define r4 (make-rect negative-slope-segment 13))
 (assert (equal? (get-area r4) 169.0))
+
+
+;; 2.1.3 What is Meant by Data
+;; --------------------------
+;;
+;; In the previous section, we introduced a data structure through three methods: a constructor and
+;; two selectors. Generally speaking, we can consider data as defined by some collection of
+;; selectors and constructors, along with certain pre-conditions (e.g., that a rational number
+;; cannot have zero in the denominator).
+;;
+;; For example, a `pair` as a data structure is defined by a set of language primitives: `cons`,
+;; `car`, and `cdr` But we also could have defined them with our own methods:
+;;
+;;   (define (cons x y)
+;;     (define (dispatch m)
+;;       (cond ((= m 0) x)
+;;       (cond ((= m 1) y)
+;;       (else (error "argument not 0 or 1 -- CONS" m))))
+;;     dispatch)
+;;
+;;   (define (car z) (z 0))
+;;   (define (cdr z) (z 1))
+;;
+;; Note that this is a data representation of functions, all three return functions and thus is a
+;; procedural representation of a data structure.
+
+;; Exercise 2.6. In case representing pairs as procedures wasn't mind-boggling enough, consider
+;; that, in a language that can manipulate procedures, we can get by without numbers (at least
+;; insofar as nonnegative integers are concerned) by implementing 0 and the operation of adding 1 as
+;; listed below. Define `one` and `two` directly (not in terms of zero and add-1.
+
+;;(define zero 
+;;  (lambda (f) 
+;;    (lambda (x) 
+;;      x)))
+
+;;(define (add-1 n)
+;;  (lambda (f) 
+;;    (lambda (x) 
+;;      (f ((n f) x)))))
+
+(define zero
+  (lambda (f)
+    (lambda (x) x) ))
+
+(define one
+  (lambda (f)
+    (lambda (x)
+      (f x) x)))
+
+(define two
+  (lambda (f)
+    (lambda (x)
+      (f (f x)) x)))
+
+
+(define three 
+  (lambda (f)
+    (lambda (x)
+      (f (f (f x))) x)))
+
+
+;; 2.1.4 Extended Exercise: Interval Arithmetic
+;; --------------------------------------------
+;;
+;; Resistance values for electrical current can be calculated according to the following formula:
+;;
+;;    R = 1 / ( 1/ R_1) + (1 / R_2) )
+;;
+;; Alyssa B Hacker's idea is to implement interval arithmetic as a set of arithmetic operations
+;; combining intervals. The result of adding to an interval should be a new interval. She postulates
+;; the existance of an abstract object called `interval` that has two endpoints, a lower bound and an
+;; upper bound. Further, given two endpoints, she can construct an interval with the data constructor
+;; `make-interval`. She also postulates that you can add two intervals, with the lower bound being the
+;; sum of the two lower bounds.
+
+(define (add-interval x y)
+  (make-interval (+ (lower-bound x) (lower-bound y))
+                 (+ (upper-bound x) (upper-bound y))))
+
+(define (mul-interval x y)
+  (let ((p1 (* (lower-bound x) (lower-bound y)))
+        (p2 (* (lower-bound x) (upper-bound y)))
+        (p3 (* (upper-bound x) (lower-bound y)))
+        (p4 (* (upper-bound x) (upper-bound y))))
+    (make-interval (min p1 p2 p3 p4)
+                   (max p1 p2 p3 p4))))
+
+(define (div-interval x y)
+  (mul-interval x
+                (make-interval (/ 1.0 (upper-bound y))
+                               (/ 1.0 (lower-bound y)))))
+
+;; Exercise 2.7. Alyssa's program is incomplete because she has not specified the implementation of the
+;; interval abstraction. Here is a definition of the interval constructor:
+
+(define (make-interval a b) (cons a b))
+
+;; Define selectors `upper-bound` and `lower-bound` to complete the implementation
+
+(define (upper-bound interval) (max (car interval) (cdr interval)))
+
+(define (lower-bound interval) (min (car interval) (cdr interval)))
