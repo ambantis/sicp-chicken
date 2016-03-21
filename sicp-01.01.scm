@@ -5,7 +5,7 @@
 ;; ===========================
 
 ;; 1.1.1 Expressions
-;; ----------------- 
+;; -----------------
 ;;
 ;; expressions are normally prefix for the interpreter. Prefix notation has
 ;; several advantages, including that it can take arbitrary number of
@@ -20,7 +20,7 @@
   (+ (* x y) (- x y)))
 
 ;; 1.1.2 Naming And The Environment
-;; -------------------------------- 
+;; --------------------------------
 ;;
 ;; We can name things using the `define` keyword. In the below example, we can
 ;; now refer to `2` with the name `size`
@@ -33,7 +33,7 @@
 ;;   2. apply the procedure that is the value of the leftmost subexpression
 ;;      (the operator) to the arguments are are the values of other
 ;;      s-expressions (the operands)
-;; 
+;;
 ;; The implication of this rule is that evaluation is recursive. Also, _special
 ;; forms_, such as `define`, do not follow this rule of evaluation.
 
@@ -140,20 +140,10 @@
 ;; Exercise 1.3 Define a procedure that takes three numbers as arguments
 ;; and returns the sum of the squares of the two larger numbers
 
-(define (ex1.3 x y z)
-  (cond ((and (< x y) (< x z)) (sum-of-squares y z))
-        ((and (< y x) (< y z)) (sum-of-squares x z))
-        ((and (< z x) (< z y)) (sum-of-squares x y))
-        ((= x y)               (sum-of-squares x z))
-        ((= x z)               (sum-of-squares x y))
-        (else                  (sum-of-squares y z))))
 
 ;; Exercise 1.4 Observe that our model of evaluation allows for combinations
 ;; whose operators are compound expressions. Use this observation to
 ;; describe the behavior of the following procedure
-
-(define (a-plus-abs-b a b)
-  ((if (> b 0) + -) a b))
 
 ;; The value of (if (> b 0) + -) is evaluated before it is passed to (? a b)
 
@@ -161,10 +151,6 @@
 ;; interpreter he is faced with is using applicative-order (call-by-value)
 ;; evaluation or normal-order evaluation. He defines the following two
 ;; procedures
-
-(define (p) (p))
-(define (test x y)
-  (if (= x 0) 0 y))
 
 ;; if the interpreter is using applicative-order evaluation, then there will
 ;; be infinite recursion because function `p` calls itself with infinite
@@ -274,32 +260,6 @@
 ;; square-root procedure. In Section 1.3.4 we will see how to implement
 ;; Newton's method in general as an abstraction of these square-root and
 ;; cube-root procedures.
-
-(define (cube-root x)
-  (cube-root-iter 1 x))
-
-(define (cube-root-iter guess x)
-  (if (improved-cube-good-enough? guess x)
-      guess
-      (begin
-        (print "guess = " guess)
-        (cube-root-iter (improve-cube-guess guess x) x))))
-
-(define (improved-cube-good-enough? guess x)
-  (< (/
-      (abs (- (cube guess) x))
-      x)
-     0.001))
-
-(define (cube x)
-  (* x x x))
-
-(define (improve-cube-guess y x)
-  (/
-   (+
-    (/ x (square y))
-    (* 2 y))
-   3))
 
 ;; 1.1.8 Procedures As Black-Box Abstractions
 ;; ------------------------------------------
